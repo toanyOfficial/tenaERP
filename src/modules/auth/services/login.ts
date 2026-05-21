@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
-import { compare } from "bcryptjs";
 import { db, dbSchema } from "@/db";
 import { AUTH_INVALID_CREDENTIALS_MESSAGE } from "@/modules/auth/constants";
 import type { LoginSuccessUser } from "@/modules/auth/types";
+import { comparePassword } from "@/modules/auth/utils/password";
 
 export async function authenticateEmployee(employeeNo: string, password: string): Promise<LoginSuccessUser> {
   const [employee] = await db
@@ -15,7 +15,7 @@ export async function authenticateEmployee(employeeNo: string, password: string)
     throw new Error(AUTH_INVALID_CREDENTIALS_MESSAGE);
   }
 
-  const isMatch = await compare(password, employee.passwordHash);
+  const isMatch = await comparePassword(password, employee.passwordHash);
 
   if (!isMatch) {
     throw new Error(AUTH_INVALID_CREDENTIALS_MESSAGE);
