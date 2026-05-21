@@ -1,1 +1,1 @@
-export const LIB_SCOPE = "lib";
+export * from "@/lib/crypto/aes";
