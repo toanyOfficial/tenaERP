@@ -2,11 +2,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db, dbSchema } from "@/db";
+import { ForbiddenApiError } from "@/lib/api";
 import { AUTH_SESSION_COOKIE_NAME } from "@/modules/auth/constants";
-import { verifySessionToken } from "@/modules/auth/utils/session";
-import type { LoginSuccessUser } from "@/modules/auth/types";
-
+import type { AuthorityCode } from "@/modules/auth/constants/authority";
+import { canAccessManagementScreen, hasAuthority } from "@/modules/auth/helpers/authority";
 import { AuthError } from "@/modules/auth/helpers/errors";
+import type { LoginSuccessUser } from "@/modules/auth/types";
+import { verifySessionToken } from "@/modules/auth/utils/session";
 
 export async function parseSession() {
   const cookieStore = await cookies();
@@ -54,6 +56,26 @@ export async function requireAuth(): Promise<LoginSuccessUser> {
 
   if (!user) {
     throw new AuthError();
+  }
+
+  return user;
+}
+
+export async function requireAuthority(minimumAuthorityCode: AuthorityCode): Promise<LoginSuccessUser> {
+  const user = await requireAuth();
+
+  if (!hasAuthority(user.authorityCode, minimumAuthorityCode)) {
+    throw new ForbiddenApiError("권한이 없습니다.");
+  }
+
+  return user;
+}
+
+export async function requireManagementAuth(): Promise<LoginSuccessUser> {
+  const user = await requireAuth();
+
+  if (!canAccessManagementScreen(user.authorityCode)) {
+    throw new ForbiddenApiError("관리 화면 접근 권한이 없습니다.");
   }
 
   return user;
