@@ -10,6 +10,7 @@ type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "children"> & {
   options: SelectOption[];
   invalid?: boolean;
   placeholder?: string;
+  readOnly?: boolean;
 };
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
