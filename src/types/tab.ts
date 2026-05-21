@@ -12,4 +12,6 @@ export type TabState = {
   bookmarkTabs: ERPTab[];
   activeKey: string | null;
   showLimitModal: boolean;
+  pendingTab: ERPTab | null;
+  closeCandidateKey: string | null;
 };

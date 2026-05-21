@@ -7,3 +7,4 @@ export { MainContent } from "@/components/layout/MainContent";
 export { TabBar } from "@/components/layout/tabs/TabBar";
 export { TabItem } from "@/components/layout/tabs/TabItem";
 export { BookmarkTabs } from "@/components/layout/tabs/BookmarkTabs";
+export { TabLimitModal } from "@/components/layout/tabs/TabLimitModal";

@@ -6,9 +6,7 @@ import type { ERPTab, TabState } from "@/types/tab";
 const MAX_WORK_TABS = 5;
 const MAX_BOOKMARK_TABS = 10;
 
-const DEFAULT_WORK_TABS: ERPTab[] = [
-  { key: "erp-home", label: "대시보드", href: "/erp", type: "work" },
-];
+const DEFAULT_WORK_TABS: ERPTab[] = [{ key: "erp-home", label: "대시보드", href: "/erp", type: "work" }];
 
 export function useTabs() {
   const [state, setState] = useState<TabState>({
@@ -16,6 +14,8 @@ export function useTabs() {
     bookmarkTabs: [],
     activeKey: DEFAULT_WORK_TABS[0].key,
     showLimitModal: false,
+    pendingTab: null,
+    closeCandidateKey: DEFAULT_WORK_TABS[0].key,
   });
 
   function setActiveTab(key: string) {
@@ -26,7 +26,14 @@ export function useTabs() {
     setState((prev) => {
       const existing = prev.workTabs.find((item) => item.key === tab.key);
       if (existing) return { ...prev, activeKey: existing.key };
-      if (prev.workTabs.length >= MAX_WORK_TABS) return { ...prev, showLimitModal: true };
+      if (prev.workTabs.length >= MAX_WORK_TABS) {
+        return {
+          ...prev,
+          showLimitModal: true,
+          pendingTab: { ...tab, type: "work" as const },
+          closeCandidateKey: prev.workTabs[0]?.key ?? null,
+        };
+      }
       return { ...prev, workTabs: [...prev.workTabs, { ...tab, type: "work" }], activeKey: tab.key };
     });
   }
@@ -51,8 +58,31 @@ export function useTabs() {
     });
   }
 
+  function setCloseCandidate(key: string) {
+    setState((prev) => ({ ...prev, closeCandidateKey: key }));
+  }
+
+  function confirmTabReplace() {
+    setState((prev) => {
+      if (!prev.pendingTab || !prev.closeCandidateKey) {
+        return { ...prev, showLimitModal: false, pendingTab: null };
+      }
+
+      const filtered = prev.workTabs.filter((tab) => tab.key !== prev.closeCandidateKey);
+      const nextWorkTabs = [...filtered, prev.pendingTab];
+
+      return {
+        ...prev,
+        workTabs: nextWorkTabs,
+        activeKey: prev.pendingTab.key,
+        showLimitModal: false,
+        pendingTab: null,
+      };
+    });
+  }
+
   function closeLimitModal() {
-    setState((prev) => ({ ...prev, showLimitModal: false }));
+    setState((prev) => ({ ...prev, showLimitModal: false, pendingTab: null }));
   }
 
   return {
@@ -63,5 +93,7 @@ export function useTabs() {
     setActiveTab,
     toggleBookmark,
     closeLimitModal,
+    setCloseCandidate,
+    confirmTabReplace,
   };
 }
