@@ -6,22 +6,16 @@ import { AUTH_SESSION_COOKIE_NAME } from "@/modules/auth/constants";
 import { verifySessionToken } from "@/modules/auth/utils/session";
 import type { LoginSuccessUser } from "@/modules/auth/types";
 
-export class UnauthorizedError extends Error {
-  constructor(message = "Unauthorized") {
-    super(message);
-    this.name = "UnauthorizedError";
-  }
-}
+import { AuthError } from "@/modules/auth/helpers/errors";
 
 export async function parseSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_SESSION_COOKIE_NAME)?.value;
 
-  if (!token) {
-    return null;
-  }
+  if (!token) return null;
 
-  return verifySessionToken(token);
+  const parsed = verifySessionToken(token);
+  return parsed;
 }
 
 export async function getCurrentUser(): Promise<LoginSuccessUser | null> {
@@ -59,7 +53,7 @@ export async function requireAuth(): Promise<LoginSuccessUser> {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new UnauthorizedError();
+    throw new AuthError();
   }
 
   return user;

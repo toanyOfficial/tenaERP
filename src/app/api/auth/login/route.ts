@@ -6,6 +6,7 @@ import {
 } from "@/modules/auth/constants";
 import { authenticateEmployee } from "@/modules/auth/services/login";
 import { createSessionToken } from "@/modules/auth/utils/session";
+import { setSessionCookie } from "@/modules/auth/helpers/session-cookie";
 
 export async function POST(request: Request) {
   try {
@@ -21,15 +22,7 @@ export async function POST(request: Request) {
     const token = createSessionToken(user.id, user.employeeNo);
 
     const response = NextResponse.json({ user }, { status: 200 });
-    response.cookies.set({
-      name: AUTH_SESSION_COOKIE_NAME,
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: AUTH_SESSION_DURATION_SECONDS,
-    });
+    setSessionCookie(response, token);
 
     return response;
   } catch {
