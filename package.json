@@ -9,7 +9,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "check": "bun run lint && bun run typecheck",
-    "db:check": "drizzle-kit check"
+    "db:check": "drizzle-kit check",
+    "check:production": "node scripts/production-check.mjs",
+    "start:prod": "NODE_ENV=production next start"
   },
   "dependencies": {
     "next": "16.0.1",
