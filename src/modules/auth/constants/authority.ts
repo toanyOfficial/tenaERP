@@ -1,0 +1,17 @@
+export const AUTHORITY_CODE = {
+  SUPER_ADMIN: "SUPER_ADMIN",
+  CEO: "CEO",
+  EXECUTIVE: "EXECUTIVE",
+  MANAGER: "MANAGER",
+  STAFF: "STAFF",
+} as const;
+
+export type AuthorityCode = (typeof AUTHORITY_CODE)[keyof typeof AUTHORITY_CODE];
+
+export const AUTHORITY_LEVEL: Record<AuthorityCode, number> = {
+  [AUTHORITY_CODE.SUPER_ADMIN]: 500,
+  [AUTHORITY_CODE.CEO]: 400,
+  [AUTHORITY_CODE.EXECUTIVE]: 300,
+  [AUTHORITY_CODE.MANAGER]: 200,
+  [AUTHORITY_CODE.STAFF]: 100,
+};
