@@ -1,7 +1,7 @@
 import { decrypt } from "@/lib/crypto/aes";
 import { createPaginationResponse, parsePagination } from "@/lib/pagination";
-import { canViewCredentialPassword } from "@/modules/auth/helpers/authority";
-import { toVisibleCredentialPassword } from "@/modules/auth/helpers/visibility";
+import { canCopyCredential, canDecryptCredential } from "@/modules/account/helpers/visibility";
+import { maskPassword } from "@/utils/masking";
 import type { LoginSuccessUser } from "@/modules/auth/types";
 import { listAccountHeadersQuery } from "@/modules/account/queries/list-accounts";
 import type { ListAccountsQuery } from "@/modules/account/validators/list-accounts";
@@ -31,15 +31,22 @@ export async function listAccountsService(query: ListAccountsQuery, user: LoginS
       title: header.title,
       tagsJson: header.tagsJson,
       details: filtered.map((detail) => {
-        const decrypted = detail.passwordEnc && canViewCredentialPassword(user.authorityCode) ? decrypt(detail.passwordEnc) : null;
+        const canDecrypt = canDecryptCredential(user);
+        const maskedPassword = detail.passwordEnc
+          ? canDecrypt
+            ? maskPassword(decrypt(detail.passwordEnc))
+            : maskPassword("********")
+          : "";
+
         return {
           authorityCode: detail.authorityCode,
           typeCode: detail.typeCode,
           loginTypeCode: detail.loginTypeCode,
           loginId: detail.loginId,
-          password: toVisibleCredentialPassword(user, decrypted),
+          password: maskedPassword,
           employeeId: detail.employeeId,
           isPersonal: detail.employeeId !== null,
+          visibility: { canDecryptCredential: canDecrypt, canCopyCredential: canCopyCredential(user) },
         };
       }),
     };

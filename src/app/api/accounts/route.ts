@@ -16,5 +16,11 @@ export const GET = withErrorHandler(async (request: Request) => {
   const user = await requireAuth();
   const result = await listAccountsService(parsed.data, user);
 
-  return successResponse(result);
+  return successResponse({
+    ...result,
+    visibility: {
+      canDecryptCredential: user.authorityCode === "SUPER_ADMIN",
+      canCopyCredential: user.authorityCode === "SUPER_ADMIN",
+    },
+  });
 });
