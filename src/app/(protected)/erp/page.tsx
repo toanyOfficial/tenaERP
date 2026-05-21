@@ -4,9 +4,18 @@ export default async function ProtectedErpPage() {
   const user = await requireAuthPage();
 
   return (
-    <main className="min-h-screen bg-slate-50 p-8">
-      <h1 className="text-2xl font-bold">ERP Protected Page</h1>
-      <p className="mt-2 text-slate-700">{user.name} 님으로 로그인되었습니다.</p>
-    </main>
+    <section className="space-y-4">
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <h2 className="text-base font-semibold text-slate-900">대시보드</h2>
+        <p className="mt-1 text-sm text-slate-600">{user.name} 님으로 로그인되어 있습니다.</p>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <h3 className="text-sm font-semibold text-slate-800">운영 안내</h3>
+        <p className="mt-2 text-sm text-slate-600">
+          본 화면은 ERP 기본 레이아웃 기반 샘플입니다. 좌측 메뉴는 고정, 우측 본문은 내부 스크롤 구조입니다.
+        </p>
+      </div>
+    </section>
   );
 }
