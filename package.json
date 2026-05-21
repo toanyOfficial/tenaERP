@@ -28,7 +28,8 @@
     "eslint-config-next": "16.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "drizzle-kit": "^0.31.7"
+    "drizzle-kit": "^0.31.7",
+    "@tailwindcss/postcss": "^4"
   },
   "packageManager": "bun@1.2.0"
 }
