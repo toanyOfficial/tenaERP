@@ -8,6 +8,7 @@ export async function listEmployeesService(query: ListEmployeesQuery) {
 
   return createPaginationResponse(
     items.map((item) => ({
+      id: item.id,
       employeeNo: item.employeeNo,
       name: item.name,
       nickname: item.nickname,

@@ -33,6 +33,7 @@ export async function getEmployeeDetailService(params: { employeeId: number; vie
       departmentCode: data.employee.departmentCode,
       positionCode: data.employee.positionCode,
       authorityCode: data.employee.authorityCode,
+      residentRegistrationNoFront: data.employee.residentRegistrationNoFront,
       residentRegistrationNoBack,
     },
     contracts: data.contracts.map((contract) => ({

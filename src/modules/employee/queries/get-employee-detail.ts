@@ -16,6 +16,7 @@ export async function getEmployeeDetailQuery(employeeId: number) {
       departmentCode: dbSchema.employee.departmentCode,
       positionCode: dbSchema.employee.positionCode,
       authorityCode: dbSchema.employee.authorityCode,
+      residentRegistrationNoFront: dbSchema.employee.residentRegistrationNoFront,
       residentRegistrationNoBackEnc: dbSchema.employee.residentRegistrationNoBackEnc,
       deleteYn: dbSchema.employee.deleteYn,
     })

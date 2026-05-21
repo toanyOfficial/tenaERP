@@ -30,6 +30,7 @@ export async function listEmployeesQuery(params: {
 
   const items = await db
     .select({
+      id: dbSchema.employee.id,
       employeeNo: dbSchema.employee.employeeNo,
       name: dbSchema.employee.name,
       nickname: dbSchema.employee.nickname,
