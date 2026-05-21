@@ -4,3 +4,6 @@ export { SidebarMenu } from "@/components/layout/SidebarMenu";
 export { SidebarItem } from "@/components/layout/SidebarItem";
 export { Header } from "@/components/layout/Header";
 export { MainContent } from "@/components/layout/MainContent";
+export { TabBar } from "@/components/layout/tabs/TabBar";
+export { TabItem } from "@/components/layout/tabs/TabItem";
+export { BookmarkTabs } from "@/components/layout/tabs/BookmarkTabs";
