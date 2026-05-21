@@ -1,5 +1,7 @@
 import { failResponse, serverErrorResponse, validationErrorResponse } from "@/lib/api/response";
 import { ApiError, UnauthorizedApiError } from "@/lib/api/errors";
+import { formatValidationErrors } from "@/lib/validation";
+import { z } from "zod";
 
 type DbLikeError = {
   code?: string;
@@ -26,28 +28,16 @@ export function normalizeDbError(error: unknown): ApiError | null {
 }
 
 export function normalizeValidationError(error: unknown): ApiError | null {
-  if (!(error instanceof Error)) {
+  if (!(error instanceof z.ZodError)) {
     return null;
   }
 
-  if (error.name !== "ZodError") {
-    return null;
-  }
+  const errors = formatValidationErrors(error).map((item) => ({
+    field: item.field,
+    message: item.message,
+  }));
 
-  const zodError = error as Error & {
-    issues?: Array<{ path?: Array<string | number>; message: string }>;
-  };
-
-  const issues = zodError.issues ?? [];
-  return new ApiError(
-    "입력값이 올바르지 않습니다.",
-    "VALIDATION_ERROR",
-    400,
-    issues.map((issue) => ({
-      field: issue.path?.join(".") ?? "unknown",
-      message: issue.message,
-    })),
-  );
+  return new ApiError("입력값이 올바르지 않습니다.", "VALIDATION_ERROR", 400, errors);
 }
 
 export function handleApiError(error: unknown) {
