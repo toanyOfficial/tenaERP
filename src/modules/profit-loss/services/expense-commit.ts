@@ -1,19 +1,11 @@
-import { and, eq } from "drizzle-orm";
-import { ApiError, ValidationApiError } from "@/lib/api";
+import { ValidationApiError } from "@/lib/api";
 import { withTransaction, db, dbSchema } from "@/db";
 import type { ExpenseCommitInput } from "@/modules/profit-loss/validators/expense-commit";
 import { expenseRowSchema, validateExpenseRowBusiness } from "@/modules/profit-loss/validators/expense-preview";
+import { createBatchLog, validateBatchExecution } from "@/lib/batch";
 
 export async function commitExpenseImport(input: ExpenseCommitInput, actorId: number) {
-  const [duplicate] = await db
-    .select({ id: dbSchema.batchLog.id })
-    .from(dbSchema.batchLog)
-    .where(and(eq(dbSchema.batchLog.batchGroup, input.batchGroup), eq(dbSchema.batchLog.batchSeq, input.batchSeq)))
-    .limit(1);
-
-  if (duplicate) {
-    throw new ApiError("이미 실행된 배치입니다.", "DUPLICATE_BATCH", 409);
-  }
+  await validateBatchExecution({ batchGroup: input.batchGroup, batchSeq: input.batchSeq });
 
   const importedCount = await withTransaction(async (tx) => {
     for (const [index, row] of input.rows.entries()) {
@@ -45,12 +37,15 @@ export async function commitExpenseImport(input: ExpenseCommitInput, actorId: nu
       });
     }
 
-    await tx.insert(dbSchema.batchLog).values({
-      batchGroup: input.batchGroup,
-      batchSeq: input.batchSeq,
-      title: input.title,
-      executedDate: new Date(),
-    });
+    await createBatchLog(
+      {
+        batchGroup: input.batchGroup,
+        batchSeq: input.batchSeq,
+        title: input.title,
+        executedDate: new Date(),
+      },
+      tx,
+    );
 
     return input.rows.length;
   });
