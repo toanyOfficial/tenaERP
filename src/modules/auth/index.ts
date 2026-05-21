@@ -8,3 +8,5 @@ export * from "@/modules/auth/validators/password";
 export * from "@/modules/auth/utils/password-validation";
 export * from "@/modules/auth/utils/password-policy-view";
 export * from "@/modules/auth/utils/password";
+export * from "@/modules/auth/helpers/visibility";
+export * from "@/modules/auth/services/visibility";

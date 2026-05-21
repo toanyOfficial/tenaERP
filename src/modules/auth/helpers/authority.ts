@@ -38,3 +38,7 @@ export function canViewResidentRegistration(authorityCode: string | null | undef
 export function canViewCredentialPassword(authorityCode: string | null | undefined): boolean {
   return isAdmin(authorityCode);
 }
+
+export function canViewContract(authorityCode: string | null | undefined): boolean {
+  return isExecutive(authorityCode);
+}
