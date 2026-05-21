@@ -1,5 +1,5 @@
 import { ValidationApiError } from "@/lib/api";
-import { withTransaction, dbSchema } from "@/db";
+import { executeTransaction, dbSchema } from "@/db";
 import { createBatchLog, validateBatchExecution } from "@/lib/batch";
 import { assertImportableRows, filterSelectedRows } from "@/lib/import";
 import type { ExpenseCommitInput } from "@/modules/profit-loss/validators/expense-commit";
@@ -18,7 +18,7 @@ export async function commitExpenseImport(input: ExpenseCommitInput, actorId: nu
         categoryCode: row.categoryCode,
         projectCode: row.projectCode,
         amount: row.amount,
-        memo: row.memo,
+        memo: row.memo
       });
 
       if (!parsed.success) {
@@ -47,7 +47,7 @@ export async function commitExpenseImport(input: ExpenseCommitInput, actorId: nu
     throw new ValidationApiError("유효하지 않은 행이 포함되어 있습니다.", [{ field: "rows", message: "선택한 행 중 유효하지 않은 데이터가 포함되어 있습니다." }]);
   }
 
-  const importedCount = await withTransaction(async (tx) => {
+  const importedCount = await executeTransaction(async (tx) => {
     for (const [index, previewRow] of selectedPreviewRows.entries()) {
       const parsedData = previewRow.parsedData;
 
@@ -83,7 +83,7 @@ export async function commitExpenseImport(input: ExpenseCommitInput, actorId: nu
     );
 
     return selectedPreviewRows.length;
-  });
+  }, { operation: "commitExpenseImport", batchGroup: input.batchGroup, batchSeq: input.batchSeq });
 
   return { importedCount, batchGroup: input.batchGroup, batchSeq: input.batchSeq };
 }
