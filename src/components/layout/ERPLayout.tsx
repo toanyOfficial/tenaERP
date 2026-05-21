@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { MainContent } from "@/components/layout/MainContent";
 import { TabBar } from "@/components/layout/tabs/TabBar";
+import { DepthBar } from "@/components/layout/depth";
 
 type ERPLayoutProps = {
   children: ReactNode;
@@ -16,6 +17,7 @@ export function ERPLayout({ children }: ERPLayoutProps) {
         <div className="flex min-w-0 flex-1 flex-col">
           <Header />
           <TabBar />
+          <DepthBar />
           <MainContent>{children}</MainContent>
         </div>
       </div>
