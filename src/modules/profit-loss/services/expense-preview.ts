@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db, dbSchema } from "@/db";
-import { createPreviewResult, validateImportRows } from "@/lib/import";
+import { bindRawData, createPreviewResult, validateImportRows } from "@/lib/import";
 import { parseExpensePreviewCsv } from "@/modules/profit-loss/parsers/expense-preview";
 import { expenseRowSchema, validateExpenseRowBusiness } from "@/modules/profit-loss/validators/expense-preview";
 
@@ -15,18 +15,28 @@ export async function buildExpensePreview(fileText: string) {
     .limit(1);
 
   const validation = validateImportRows(
-    rows.map((row) => ({ rowNo: row.rowNo, parsedData: row.parsed })),
-    (raw) => {
-      const parsed = expenseRowSchema.safeParse(raw);
+    rows.map((row) => ({ rowNo: row.rowNo, parsedData: bindRawData(row.parsed, row.raw) })),
+    (input) => {
+      const parsed = expenseRowSchema.safeParse(input.parsedData);
       if (!parsed.success) {
         return { success: false as const, errors: parsed.error.issues.map((issue) => issue.message) };
       }
-      return { success: true as const, data: parsed.data };
+      return { success: true as const, data: bindRawData(parsed.data, input.rawData) };
     },
-    validateExpenseRowBusiness,
+    (row) => validateExpenseRowBusiness(row.parsedData),
   );
 
   const preview = createPreviewResult(validation);
+  const items = preview.items.map((row) => ({
+    rowNo: row.rowNo,
+    parsedData: row.parsedData.parsedData,
+    rawData: row.parsedData.rawData,
+    valid: row.valid,
+    errors: row.errors,
+    validation: { valid: row.valid, errors: row.errors },
+    importable: row.valid,
+    errorMessage: row.valid ? null : row.errors[0] ?? "검증 오류",
+  }));
 
   return {
     previewCount: preview.summary.totalRows,
@@ -38,7 +48,7 @@ export async function buildExpensePreview(fileText: string) {
       latestBatchSeq: lastBatch?.batchSeq ?? null,
       latestExecutedDate: lastBatch?.executedDate ?? null,
     },
-    items: preview.items,
-    invalidRows: preview.invalidRows,
+    items,
+    invalidRows: items.filter((row) => !row.importable),
   };
 }
