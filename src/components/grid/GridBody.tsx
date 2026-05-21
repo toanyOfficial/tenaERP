@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef } from "react";
 import { GridRow } from "@/components/grid/GridRow";
 import type { GridColumn, GridEmptyMode } from "@/components/grid/grid.types";
@@ -34,12 +36,12 @@ export function GridBody<T>({ columns, rows, rowKey, onRowClick, loading, errorM
   }, [onLoadMore, hasMore, rows.length]);
 
   if (errorMessage) {
-    return <tbody><tr><td className="h-16 px-3 text-xs text-rose-600" colSpan={columns.length + (selectable ? 1 : 0)}>{errorMessage}</td></tr></tbody>;
+    return <tbody><tr><td className="h-12 px-3 text-xs text-rose-600" colSpan={columns.length + (selectable ? 1 : 0)}>{errorMessage}</td></tr></tbody>;
   }
 
   if (!loading && rows.length === 0) {
     const message = emptyMode === "no-result" ? "검색 결과가 없습니다." : "표시할 데이터가 없습니다.";
-    return <tbody><tr><td className="h-16 px-3 text-xs text-slate-500" colSpan={columns.length + (selectable ? 1 : 0)}>{message}</td></tr></tbody>;
+    return <tbody><tr><td className="h-12 px-3 text-xs text-slate-500" colSpan={columns.length + (selectable ? 1 : 0)}>{message}</td></tr></tbody>;
   }
 
   return (
@@ -60,7 +62,7 @@ export function GridBody<T>({ columns, rows, rowKey, onRowClick, loading, errorM
           />
         );
       })}
-      {loading ? <tr><td className="h-10 px-3 text-xs text-slate-500" colSpan={columns.length + (selectable ? 1 : 0)}>로딩 중...</td></tr> : null}
+      {loading ? <tr><td className="h-9 px-3 text-xs text-slate-500" colSpan={columns.length + (selectable ? 1 : 0)}>로딩 중...</td></tr> : null}
       {hasMore ? <tr ref={sentinelRef}><td className="h-1" colSpan={columns.length + (selectable ? 1 : 0)} /></tr> : null}
     </tbody>
   );

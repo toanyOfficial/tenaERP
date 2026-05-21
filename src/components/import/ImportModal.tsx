@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Modal } from "@/components/modal";
 import { PreviewGrid } from "@/components/import/PreviewGrid";
 import { ValidationSummary } from "@/components/import/ValidationSummary";
@@ -23,57 +23,71 @@ export function ImportModal(props: {
   const [summary, setSummary] = useState<ImportValidationSummary | null>(null);
   const [result, setResult] = useState<ImportResultState | null>(null);
   const [rollbackError, setRollbackError] = useState<string | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [loadingCommit, setLoadingCommit] = useState(false);
+
+  const invalidRows = useMemo(() => rows.filter((row) => !(row.importable ?? row.valid)).length, [rows]);
 
   async function handleUpload(file: File) {
     setResult(null);
     setRollbackError(null);
+    setLoadingPreview(true);
 
-    const form = new FormData();
-    form.set("file", file);
+    try {
+      const form = new FormData();
+      form.set("file", file);
 
-    const res = await fetch(props.previewUrl, { method: "POST", body: form });
-    const json = await res.json();
-    if (!json.success) {
-      setRollbackError(json.error?.message ?? "Preview 실패");
-      return;
+      const res = await fetch(props.previewUrl, { method: "POST", body: form });
+      const json = await res.json();
+      if (!json.success) {
+        setRollbackError(json.error?.message ?? "Preview 실패");
+        return;
+      }
+
+      const data = json.data;
+      const previewRows = (data.items ?? []) as ImportPreviewRow[];
+      setRows(previewRows);
+      setSummary({
+        previewCount: data.previewCount ?? previewRows.length,
+        validCount: data.validCount ?? previewRows.filter((row) => row.valid).length,
+        invalidCount: data.invalidCount ?? previewRows.filter((row) => !row.valid).length,
+        canImport: Boolean(data.canImport),
+      });
+      setSelected(previewRows.map((_, i) => i).filter((i) => (previewRows[i].importable ?? previewRows[i].valid)));
+    } finally {
+      setLoadingPreview(false);
     }
-
-    const data = json.data;
-    const previewRows = (data.items ?? []) as ImportPreviewRow[];
-    setRows(previewRows);
-    setSummary({
-      previewCount: data.previewCount ?? previewRows.length,
-      validCount: data.validCount ?? previewRows.filter((row) => row.valid).length,
-      invalidCount: data.invalidCount ?? previewRows.filter((row) => !row.valid).length,
-      canImport: Boolean(data.canImport),
-    });
-    setSelected(previewRows.map((_, i) => i).filter((i) => (previewRows[i].importable ?? previewRows[i].valid)));
   }
 
   async function handleCommit() {
     setResult(null);
     setRollbackError(null);
+    setLoadingCommit(true);
 
-    const commitRows = selected.map((i) => rows[i].parsedData);
-    const res = await fetch(props.commitUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        batchGroup: props.batchGroup,
-        batchSeq: Date.now(),
-        title: props.commitTitle,
-        rows: commitRows,
-      }),
-    });
-    const json = await res.json();
+    try {
+      const commitRows = selected.map((i) => rows[i].parsedData);
+      const res = await fetch(props.commitUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batchGroup: props.batchGroup,
+          batchSeq: Date.now(),
+          title: props.commitTitle,
+          rows: commitRows,
+        }),
+      });
+      const json = await res.json();
 
-    if (!json.success) {
-      setRollbackError(json.error?.message ?? "Commit 실패");
-      return;
+      if (!json.success) {
+        setRollbackError(json.error?.message ?? "Commit 실패");
+        return;
+      }
+
+      setResult(json.data as ImportResultState);
+      if (props.onCommitted) await props.onCommitted();
+    } finally {
+      setLoadingCommit(false);
     }
-
-    setResult(json.data as ImportResultState);
-    if (props.onCommitted) await props.onCommitted();
   }
 
   if (!props.open) return null;
@@ -84,7 +98,15 @@ export function ImportModal(props: {
       title={props.title}
       onClose={props.onClose}
       size="large"
-      footer={<button className="rounded border px-2 py-1 text-xs" onClick={() => void handleCommit()}>Import Commit</button>}
+      footer={
+        <button
+          className="rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={loadingCommit || selected.length === 0 || invalidRows > 0}
+          onClick={() => void handleCommit()}
+        >
+          {loadingCommit ? "Import 중..." : `Import Commit (${selected.length})`}
+        </button>
+      }
     >
       <div className="space-y-2">
         <input
@@ -99,6 +121,8 @@ export function ImportModal(props: {
         <PreviewGrid
           rows={rows}
           selected={selected}
+          loading={loadingPreview}
+          errorMessage={rollbackError}
           onToggle={(index, checked) =>
             setSelected((prev) => (checked ? [...prev, index] : prev.filter((v) => v !== index)))
           }
