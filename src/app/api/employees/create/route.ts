@@ -1,6 +1,6 @@
 import { successResponse, validationErrorResponse, withErrorHandler } from "@/lib/api";
 import { validateBody } from "@/lib/validation";
-import { requireAuth } from "@/modules/auth/helpers/auth";
+import { requireManagementAuth } from "@/modules/auth/helpers/auth";
 import { createEmployeeService } from "@/modules/employee/services/create-employee";
 import { createEmployeeSchema, validateCreateEmployeeBusiness } from "@/modules/employee/validators/create-employee";
 
@@ -17,7 +17,7 @@ export const POST = withErrorHandler(async (request: Request) => {
     return validationErrorResponse(business.message, business.errors);
   }
 
-  const user = await requireAuth();
+  const user = await requireManagementAuth();
   const created = await createEmployeeService(parsed.data, user.id);
 
   return successResponse(created, "인원이 생성되었습니다.", 201);
