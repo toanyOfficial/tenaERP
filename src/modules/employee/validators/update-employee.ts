@@ -2,6 +2,15 @@ import { z } from "zod";
 import { validatePasswordPolicy } from "@/modules/auth/validators/password";
 
 const optionalString = (max: number) => z.string().trim().max(max).optional().or(z.literal(""));
+const contractSchema = z.object({
+  id: z.number().int().optional(),
+  writtenDate: z.string().trim().optional().or(z.literal("")),
+  contractStartDate: z.string().trim().min(1, "계약 시작일자를 입력해주세요."),
+  contractEndDate: z.string().trim().optional().or(z.literal("")),
+  annualSalary: z.number().nullable().optional(),
+  filePath: z.string().nullable().optional(),
+  isNew: z.boolean().optional(),
+});
 
 export const updateEmployeeSchema = z
   .object({
@@ -16,6 +25,7 @@ export const updateEmployeeSchema = z
     password: z.string().optional(),
     residentRegistrationNoFront: z.string().trim().regex(/^\d{6}$/, "주민번호 앞자리는 6자리 숫자여야 합니다.").optional(),
     residentRegistrationNoBack: z.string().trim().regex(/^\d{7}$/, "주민번호 뒷자리는 7자리 숫자여야 합니다.").optional(),
+    contracts: z.array(contractSchema).optional(),
   })
   .strict();
 
@@ -33,6 +43,7 @@ const updatableFields: Array<keyof UpdateEmployeeInput> = [
   "password",
   "residentRegistrationNoFront",
   "residentRegistrationNoBack",
+  "contracts",
 ];
 
 export function validateUpdateEmployeeBusiness(input: UpdateEmployeeInput) {

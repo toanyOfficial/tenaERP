@@ -1,6 +1,6 @@
 import { successResponse, validationErrorResponse, withErrorHandler } from "@/lib/api";
 import { validateBody } from "@/lib/validation";
-import { requireAuth } from "@/modules/auth/helpers/auth";
+import { requireManagementAuth } from "@/modules/auth/helpers/auth";
 import { deleteEmployeeContractFile } from "@/modules/employee/services/contract-file";
 import { deleteContractFileSchema } from "@/modules/employee/validators/contract-file";
 
@@ -12,7 +12,7 @@ export const DELETE = withErrorHandler(async (request: Request) => {
     return validationErrorResponse(parsed.message, parsed.errors);
   }
 
-  const user = await requireAuth();
+  const user = await requireManagementAuth();
   const deleted = await deleteEmployeeContractFile({
     contractId: parsed.data.contractId,
     actorId: user.id,

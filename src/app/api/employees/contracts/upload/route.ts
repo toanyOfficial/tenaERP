@@ -1,5 +1,5 @@
 import { successResponse, validationErrorResponse, withErrorHandler } from "@/lib/api";
-import { requireAuth } from "@/modules/auth/helpers/auth";
+import { requireManagementAuth } from "@/modules/auth/helpers/auth";
 import { uploadEmployeeContractFile } from "@/modules/employee/services/contract-file";
 import { uploadContractFileSchema } from "@/modules/employee/validators/contract-file";
 
@@ -19,7 +19,7 @@ export const POST = withErrorHandler(async (request: Request) => {
     return validationErrorResponse("파일이 필요합니다.", [{ field: "file", message: "업로드할 PDF 파일을 선택해주세요." }]);
   }
 
-  const user = await requireAuth();
+  const user = await requireManagementAuth();
   const uploaded = await uploadEmployeeContractFile({
     contractId: parsed.data.contractId,
     file: fileValue,

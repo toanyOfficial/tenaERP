@@ -27,7 +27,8 @@ export async function updateEmployeeService(params: UpdateEmployeeParams) {
   const needsExecutivePermission =
     params.input.authorityCode !== undefined ||
     params.input.residentRegistrationNoFront !== undefined ||
-    params.input.residentRegistrationNoBack !== undefined;
+    params.input.residentRegistrationNoBack !== undefined ||
+    params.input.contracts !== undefined;
 
   if (needsExecutivePermission && !isExecutive(params.actorAuthorityCode)) {
     throw new ForbiddenApiError("민감정보는 임원 이상만 수정할 수 있습니다.");
@@ -55,10 +56,31 @@ export async function updateEmployeeService(params: UpdateEmployeeParams) {
     updatePayload.residentRegistrationNoBackEnc = encrypt(params.input.residentRegistrationNoBack);
   }
 
-  await db
-    .update(dbSchema.employee)
-    .set(updatePayload)
-    .where(and(eq(dbSchema.employee.id, params.employeeId), eq(dbSchema.employee.deleteYn, "N")));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(dbSchema.employee)
+      .set(updatePayload)
+      .where(and(eq(dbSchema.employee.id, params.employeeId), eq(dbSchema.employee.deleteYn, "N")));
+
+    if (params.input.contracts?.length) {
+      const newContracts = params.input.contracts.filter((contract) => (contract.isNew || !contract.id) && contract.contractStartDate);
+      if (newContracts.length > 0) {
+        await tx.insert(dbSchema.employeeContract).values(
+          newContracts.map((contract) => ({
+            employeeId: params.employeeId,
+            writtenDate: contract.writtenDate ? new Date(contract.writtenDate) : null,
+            contractStartDate: new Date(contract.contractStartDate),
+            contractEndDate: contract.contractEndDate ? new Date(contract.contractEndDate) : null,
+            annualSalary: contract.annualSalary ?? null,
+            filePath: contract.filePath ?? null,
+            deleteYn: "N",
+            createdBy: params.actorId,
+            updatedBy: params.actorId,
+          })),
+        );
+      }
+    }
+  });
 
   return { id: params.employeeId };
 }
