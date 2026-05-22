@@ -10,6 +10,7 @@ export default function Page() {
   const [rows, setRows] = useState<EmployeeListRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [search, setSearch] = useState({ name: "", employeeNo: "", phone: "", birthDate: "", employmentStatus: "ALL" });
   const [selected, setSelected] = useState<EmployeeListRow | null>(null);
   const [detail, setDetail] = useState<EmployeeDetail | null>(null);
@@ -17,11 +18,32 @@ export default function Page() {
   const [canEditSensitive, setCanEditSensitive] = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true); setError(null);
-    const params = new URLSearchParams(search as Record<string, string>);
-    const res = await fetch(`/api/employees?${params.toString()}`);
+    setLoading(true);
+    setError(null);
+    setSearchError(null);
+
+    const params = new URLSearchParams();
+    Object.entries(search).forEach(([key, value]) => {
+      if (!value) return;
+      if (key === "employmentStatus" && value === "ALL") return;
+      params.set(key, value);
+    });
+
+    const query = params.toString();
+    const res = await fetch(`/api/employees${query ? `?${query}` : ""}`);
     const json = await res.json();
-    if (!json.success) { setError(json.message ?? "조회 실패"); setLoading(false); return; }
+
+    if (!json.success) {
+      if (json.errorCode === "VALIDATION_ERROR") {
+        setSearchError(json.message ?? "검색 조건을 확인해주세요.");
+        setError(null);
+      } else {
+        setError(json.message ?? "조회 실패");
+      }
+      setLoading(false);
+      return;
+    }
+
     setRows(json.data.items);
     setLoading(false);
   }, [search]);
@@ -30,19 +52,15 @@ export default function Page() {
     void (async () => {
       const res = await fetch("/api/auth/me");
       const json = await res.json();
-      const authorityCode = json?.data?.authorityCode as string | undefined;
-      const executive = authorityCode === "SUPER_ADMIN" || authorityCode === "CEO" || authorityCode === "EXECUTIVE";
-      setCanViewContract(executive);
-      setCanEditSensitive(executive);
+      const canViewContract = Boolean(json?.data?.visibility?.canViewContract);
+      setCanViewContract(canViewContract);
+      setCanEditSensitive(canViewContract);
     })();
   }, []);
 
   async function openDetail(row: EmployeeListRow) {
     setSelected(row);
     const res = await fetch(`/api/employees/${row.id}`);
-    // detail API expects numeric id; fallback query by list row click through separate map unavailable in list response.
-    // use list index-based route is not possible, so derive via separate search by name/employeeNo from list endpoint not provided.
-    // keep modal for new mode when no detail fetched.
     if (!res.ok) {
       setDetail(null);
       return;
@@ -64,6 +82,8 @@ export default function Page() {
           </select>
         </SearchField>
       </SearchBar>
+
+      {searchError ? <p className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600">{searchError}</p> : null}
 
       <OperationBar leftActions={<DefaultOperationActions onCreate={() => { setSelected({ id: 0, employeeNo: "", name: "신규", nickname: null, birthDate: null, phone: null, email: null, bankName: null, bankAccountNo: null, address: null, employmentStatus: "EMPLOYED", updatedAt: new Date().toISOString() }); setDetail(null); }} />} onReset={() => void load()} />
 
