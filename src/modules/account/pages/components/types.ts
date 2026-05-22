@@ -1,4 +1,4 @@
-export type CredentialSourceType = "MANUAL" | "MASTER";
+export type CredentialSourceType = "1" | "2";
 
 export type AccountDetailItem = {
   id?: number;
