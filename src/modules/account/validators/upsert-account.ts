@@ -1,10 +1,16 @@
 import { z } from "zod";
 
+const credentialSourceTypeSchema = z.enum(["MANUAL", "MASTER"]);
+
 const accountDetailSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
   typeCode: z.string().trim().max(100).optional().or(z.literal("")),
   loginTypeCode: z.string().trim().max(100).optional().or(z.literal("")),
+  idSourceType: credentialSourceTypeSchema.default("MANUAL"),
+  idMasterId: z.coerce.number().int().positive().optional().nullable(),
   loginId: z.string().trim().max(255).optional().or(z.literal("")),
+  passwordSourceType: credentialSourceTypeSchema.default("MANUAL"),
+  passwordMasterId: z.coerce.number().int().positive().optional().nullable(),
   password: z.string().optional(),
   authorityCode: z.string().trim().max(100).optional().or(z.literal("")),
   employeeId: z.coerce.number().int().positive().optional().nullable(),
