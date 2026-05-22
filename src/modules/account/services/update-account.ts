@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { NotFoundApiError, ValidationApiError } from "@/lib/api";
 import { encrypt } from "@/lib/crypto/aes";
 import { db, dbSchema } from "@/db";
+import { ACCOUNT_TYPE_CODE, LOGIN_TYPE_CODE } from "@/modules/account/constants";
 import type { UpdateAccountInput } from "@/modules/account/validators/upsert-account";
 
 export async function updateAccountService(accountId: number, input: UpdateAccountInput, actorId: number) {
@@ -22,6 +23,13 @@ export async function updateAccountService(accountId: number, input: UpdateAccou
 
   if (input.details && input.details.length > 0) {
     for (const detail of input.details) {
+      if (detail.typeCode !== undefined && !Object.values(ACCOUNT_TYPE_CODE).includes(detail.typeCode)) {
+        throw new ValidationApiError("유효하지 않은 계정 타입입니다.", [{ field: "typeCode", message: "typeCode는 1/2/3만 허용됩니다." }]);
+      }
+      if (detail.loginTypeCode !== undefined && !Object.values(LOGIN_TYPE_CODE).includes(detail.loginTypeCode)) {
+        throw new ValidationApiError("유효하지 않은 로그인 타입입니다.", [{ field: "loginTypeCode", message: "loginTypeCode는 1~6만 허용됩니다." }]);
+      }
+
       if (detail.employeeId) {
         const [employee] = await db.select({ id: dbSchema.employee.id }).from(dbSchema.employee).where(and(eq(dbSchema.employee.id, detail.employeeId), eq(dbSchema.employee.deleteYn, "N"))).limit(1);
         if (!employee) throw new NotFoundApiError(`유효하지 않은 인원 ID입니다. (${detail.employeeId})`);
@@ -82,6 +90,7 @@ export async function updateAccountService(accountId: number, input: UpdateAccou
           loginId = idMaster.loginId;
           idMasterId = idMaster.id;
         }
+        if (idSourceType === "1") idMasterId = null;
 
         let passwordEnc = "";
         let passwordMasterId: number | null = null;
@@ -94,6 +103,7 @@ export async function updateAccountService(accountId: number, input: UpdateAccou
           passwordMasterId = passwordMaster.id;
         } else {
           passwordEnc = encrypt(detail.password ?? "");
+          passwordMasterId = null;
         }
 
         await db.insert(dbSchema.accountDetail).values({

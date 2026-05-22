@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { ApiError, NotFoundApiError, ValidationApiError } from "@/lib/api";
 import { encrypt } from "@/lib/crypto/aes";
 import { db, dbSchema } from "@/db";
+import { ACCOUNT_TYPE_CODE, LOGIN_TYPE_CODE } from "@/modules/account/constants";
 import type { CreateAccountInput } from "@/modules/account/validators/upsert-account";
 
 export async function createAccountService(input: CreateAccountInput, actorId: number) {
@@ -21,6 +22,13 @@ export async function createAccountService(input: CreateAccountInput, actorId: n
   if (!headerId) throw new ApiError("계정 헤더 생성에 실패했습니다.", "ACCOUNT_HEADER_CREATE_FAILED", 500);
 
   for (const detail of input.details) {
+    if (!detail.typeCode || !Object.values(ACCOUNT_TYPE_CODE).includes(detail.typeCode)) {
+      throw new ValidationApiError("유효하지 않은 계정 타입입니다.", [{ field: "typeCode", message: "typeCode는 1/2/3만 허용됩니다." }]);
+    }
+    if (!detail.loginTypeCode || !Object.values(LOGIN_TYPE_CODE).includes(detail.loginTypeCode)) {
+      throw new ValidationApiError("유효하지 않은 로그인 타입입니다.", [{ field: "loginTypeCode", message: "loginTypeCode는 1~6만 허용됩니다." }]);
+    }
+
     if (detail.employeeId) {
       const [employee] = await db.select({ id: dbSchema.employee.id }).from(dbSchema.employee).where(and(eq(dbSchema.employee.id, detail.employeeId), eq(dbSchema.employee.deleteYn, "N"))).limit(1);
       if (!employee) throw new NotFoundApiError(`유효하지 않은 인원 ID입니다. (${detail.employeeId})`);
@@ -39,6 +47,8 @@ export async function createAccountService(input: CreateAccountInput, actorId: n
       if (!idMaster || idMaster.useYn !== "Y") throw new ValidationApiError("사용 가능한 아이디마스터를 찾을 수 없습니다.", [{ field: "idMasterId", message: "활성화된 아이디마스터만 선택할 수 있습니다." }]);
       loginId = idMaster.loginId;
       idMasterId = idMaster.id;
+    } else {
+      idMasterId = null;
     }
 
     let passwordEnc = "";
@@ -53,6 +63,7 @@ export async function createAccountService(input: CreateAccountInput, actorId: n
       passwordMasterId = passwordMaster.id;
     } else {
       passwordEnc = encrypt(detail.password ?? "");
+      passwordMasterId = null;
     }
 
     await db.insert(dbSchema.accountDetail).values({

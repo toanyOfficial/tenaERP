@@ -57,3 +57,12 @@ export async function listAccountHeadersQuery(params: { query: ListAccountsQuery
 
   return { totalCount: Number(countRow?.count ?? 0), headers, details };
 }
+
+export async function getAuthorityLabelMap() {
+  const codes = await db
+    .select({ key: dbSchema.baseCode.key, value: dbSchema.baseCode.value })
+    .from(dbSchema.baseCode)
+    .where(and(eq(dbSchema.baseCode.group, "AUTHORITY"), eq(dbSchema.baseCode.useYn, "Y")));
+
+  return new Map(codes.map((code) => [code.key, code.value]));
+}

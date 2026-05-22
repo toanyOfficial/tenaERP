@@ -44,5 +44,15 @@ export async function listIdMasterOptionsService() {
 }
 
 export async function listPasswordMasterOptionsService() {
-  return db.select({ id: dbSchema.passwordMaster.id, title: dbSchema.passwordMaster.title, authorityCode: dbSchema.passwordMaster.authorityCode, useYn: dbSchema.passwordMaster.useYn }).from(dbSchema.passwordMaster).where(eq(dbSchema.passwordMaster.useYn, "Y")).orderBy(dbSchema.passwordMaster.id);
+  const [masters, authorityCodes] = await Promise.all([
+    db.select({ id: dbSchema.passwordMaster.id, title: dbSchema.passwordMaster.title, authorityCode: dbSchema.passwordMaster.authorityCode, useYn: dbSchema.passwordMaster.useYn }).from(dbSchema.passwordMaster).where(eq(dbSchema.passwordMaster.useYn, "Y")).orderBy(dbSchema.passwordMaster.id),
+    db.select({ key: dbSchema.baseCode.key, value: dbSchema.baseCode.value }).from(dbSchema.baseCode).where(eq(dbSchema.baseCode.group, "AUTHORITY")),
+  ]);
+
+  const authorityLabelMap = new Map(authorityCodes.map((code) => [code.key, code.value]));
+
+  return masters.map((master) => ({
+    ...master,
+    authorityLabel: master.authorityCode ? (authorityLabelMap.get(master.authorityCode) ?? null) : null,
+  }));
 }
