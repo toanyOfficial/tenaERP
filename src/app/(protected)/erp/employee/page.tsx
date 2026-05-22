@@ -52,10 +52,9 @@ export default function Page() {
     void (async () => {
       const res = await fetch("/api/auth/me");
       const json = await res.json();
-      const authorityCode = json?.data?.user?.authorityCode as string | undefined;
-      const executive = authorityCode === "SUPER_ADMIN" || authorityCode === "CEO" || authorityCode === "EXECUTIVE";
-      setCanViewContract(executive);
-      setCanEditSensitive(executive);
+      const canViewContract = Boolean(json?.data?.visibility?.canViewContract);
+      setCanViewContract(canViewContract);
+      setCanEditSensitive(canViewContract);
     })();
   }, []);
 
