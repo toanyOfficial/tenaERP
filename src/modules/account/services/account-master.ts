@@ -37,3 +37,12 @@ export async function updatePasswordMasterService(input: { id: number; title?: s
   await db.update(dbSchema.passwordMaster).set(payload).where(eq(dbSchema.passwordMaster.id, input.id));
   return { id: input.id };
 }
+
+
+export async function listIdMasterOptionsService() {
+  return db.select({ id: dbSchema.idMaster.id, title: dbSchema.idMaster.title, loginId: dbSchema.idMaster.loginId, useYn: dbSchema.idMaster.useYn }).from(dbSchema.idMaster).where(eq(dbSchema.idMaster.useYn, "Y")).orderBy(dbSchema.idMaster.id);
+}
+
+export async function listPasswordMasterOptionsService() {
+  return db.select({ id: dbSchema.passwordMaster.id, title: dbSchema.passwordMaster.title, authorityCode: dbSchema.passwordMaster.authorityCode, useYn: dbSchema.passwordMaster.useYn }).from(dbSchema.passwordMaster).where(eq(dbSchema.passwordMaster.useYn, "Y")).orderBy(dbSchema.passwordMaster.id);
+}

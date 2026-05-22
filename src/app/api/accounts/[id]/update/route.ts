@@ -2,7 +2,7 @@ import { successResponse, validationErrorResponse, withErrorHandler } from "@/li
 import { validateBody } from "@/lib/validation";
 import { requireManagementAuth } from "@/modules/auth/helpers/auth";
 import { updateAccountService } from "@/modules/account/services/update-account";
-import { updateAccountSchema } from "@/modules/account/validators/upsert-account";
+import { updateAccountSchema, validateAccountDetailsBusiness } from "@/modules/account/validators/upsert-account";
 
 export const PATCH = withErrorHandler(async (request: Request, context: { params: Promise<{ id: string }> }) => {
   const { id } = await context.params;
@@ -17,6 +17,13 @@ export const PATCH = withErrorHandler(async (request: Request, context: { params
 
   if (!parsed.success) {
     return validationErrorResponse(parsed.message, parsed.errors);
+  }
+
+  if (parsed.data.details) {
+    const business = validateAccountDetailsBusiness(parsed.data.details, { isUpdate: true });
+    if (!business.success) {
+      return validationErrorResponse(business.message, business.errors);
+    }
   }
 
   const user = await requireManagementAuth();

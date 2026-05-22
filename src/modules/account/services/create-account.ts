@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { ApiError, NotFoundApiError } from "@/lib/api";
+import { ApiError, NotFoundApiError, ValidationApiError } from "@/lib/api";
 import { encrypt } from "@/lib/crypto/aes";
 import { db, dbSchema } from "@/db";
 import type { CreateAccountInput } from "@/modules/account/validators/upsert-account";
@@ -26,16 +26,45 @@ export async function createAccountService(input: CreateAccountInput, actorId: n
       if (!employee) throw new NotFoundApiError(`유효하지 않은 인원 ID입니다. (${detail.employeeId})`);
     }
 
+    const idSourceType = detail.idSourceType ?? "MANUAL";
+    const passwordSourceType = detail.passwordSourceType ?? "MANUAL";
+
+    let loginId = detail.loginId?.trim() || null;
+    let idMasterId: number | null = null;
+
+    if (idSourceType === "MASTER") {
+      const masterId = detail.idMasterId;
+      if (!masterId) throw new ValidationApiError("유효하지 않은 아이디마스터 ID입니다.", [{ field: "idMasterId", message: "ID 마스터선택 시 아이디마스터 ID가 필요합니다." }]);
+      const [idMaster] = await db.select({ id: dbSchema.idMaster.id, loginId: dbSchema.idMaster.loginId, useYn: dbSchema.idMaster.useYn }).from(dbSchema.idMaster).where(eq(dbSchema.idMaster.id, masterId)).limit(1);
+      if (!idMaster || idMaster.useYn !== "Y") throw new ValidationApiError("사용 가능한 아이디마스터를 찾을 수 없습니다.", [{ field: "idMasterId", message: "활성화된 아이디마스터만 선택할 수 있습니다." }]);
+      loginId = idMaster.loginId;
+      idMasterId = idMaster.id;
+    }
+
+    let passwordEnc = "";
+    let passwordMasterId: number | null = null;
+
+    if (passwordSourceType === "MASTER") {
+      const masterId = detail.passwordMasterId;
+      if (!masterId) throw new ValidationApiError("유효하지 않은 비밀번호마스터 ID입니다.", [{ field: "passwordMasterId", message: "PW 마스터선택 시 비밀번호마스터 ID가 필요합니다." }]);
+      const [passwordMaster] = await db.select({ id: dbSchema.passwordMaster.id, passwordEnc: dbSchema.passwordMaster.passwordEnc, useYn: dbSchema.passwordMaster.useYn }).from(dbSchema.passwordMaster).where(eq(dbSchema.passwordMaster.id, masterId)).limit(1);
+      if (!passwordMaster || passwordMaster.useYn !== "Y") throw new ValidationApiError("사용 가능한 비밀번호마스터를 찾을 수 없습니다.", [{ field: "passwordMasterId", message: "활성화된 비밀번호마스터만 선택할 수 있습니다." }]);
+      passwordEnc = passwordMaster.passwordEnc;
+      passwordMasterId = passwordMaster.id;
+    } else {
+      passwordEnc = encrypt(detail.password ?? "");
+    }
+
     await db.insert(dbSchema.accountDetail).values({
       headerId,
       typeCode: detail.typeCode || null,
       loginTypeCode: detail.loginTypeCode || null,
-      idSourceType: detail.idSourceType ?? "MANUAL",
-      idMasterId: detail.idMasterId ?? null,
-      loginId: detail.loginId || null,
-      passwordSourceType: detail.passwordSourceType ?? "MANUAL",
-      passwordMasterId: detail.passwordMasterId ?? null,
-      passwordEnc: encrypt(detail.password ?? ""),
+      idSourceType,
+      idMasterId,
+      loginId,
+      passwordSourceType,
+      passwordMasterId,
+      passwordEnc,
       authorityCode: detail.authorityCode || null,
       employeeId: detail.employeeId ?? null,
       createdBy: actorId,
