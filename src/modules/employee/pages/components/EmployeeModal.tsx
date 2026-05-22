@@ -69,27 +69,6 @@ export function EmployeeModal(props: {
     })();
   }, [props.open]);
 
-  useEffect(() => {
-    if (!props.open) return;
-
-    void (async () => {
-      try {
-        const res = await fetch("/api/base-codes?groups=BANK,DEPARTMENT,POSITION,AUTHORITY");
-        const json = await res.json();
-        if (!json.success) return;
-
-        setCodeOptions({
-          bank: json.data.BANK ?? [],
-          department: json.data.DEPARTMENT ?? [],
-          position: json.data.POSITION ?? [],
-          authority: json.data.AUTHORITY ?? [],
-        });
-      } catch {
-        setCodeOptions(EMPTY_CODES);
-      }
-    })();
-  }, [props.open]);
-
   async function handleSave() {
     const payload: Partial<EmployeeFormState> & { contracts?: EmployeeDetail["contracts"] } = {};
     Object.entries(form).forEach(([k, v]) => { if (v !== "") payload[k as keyof EmployeeFormState] = v; });
