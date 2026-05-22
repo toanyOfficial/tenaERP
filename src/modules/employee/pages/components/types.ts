@@ -27,6 +27,8 @@ export type EmployeeDetail = {
     departmentCode: string | null;
     positionCode: string | null;
     authorityCode: string | null;
+    joinDate: string | null;
+    resignDate: string | null;
     residentRegistrationNoFront: string | null;
     residentRegistrationNoBack: string | null;
   };

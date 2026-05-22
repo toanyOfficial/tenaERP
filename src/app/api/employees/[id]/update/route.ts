@@ -1,6 +1,6 @@
 import { successResponse, validationErrorResponse, withErrorHandler } from "@/lib/api";
 import { validateBody } from "@/lib/validation";
-import { requireAuth } from "@/modules/auth/helpers/auth";
+import { requireManagementAuth } from "@/modules/auth/helpers/auth";
 import { updateEmployeeService } from "@/modules/employee/services/update-employee";
 import { updateEmployeeSchema, validateUpdateEmployeeBusiness } from "@/modules/employee/validators/update-employee";
 
@@ -24,7 +24,7 @@ export const PATCH = withErrorHandler(async (request: Request, context: { params
     return validationErrorResponse(business.message, business.errors);
   }
 
-  const user = await requireAuth();
+  const user = await requireManagementAuth();
 
   const updated = await updateEmployeeService({
     employeeId,
