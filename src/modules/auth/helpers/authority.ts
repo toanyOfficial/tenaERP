@@ -1,27 +1,16 @@
 import { AUTHORITY_CODE, AUTHORITY_LEVEL, type AuthorityCode } from "@/modules/auth/constants/authority";
 
-const AUTHORITY_KEY_MAP: Record<string, AuthorityCode> = {
-  "1": AUTHORITY_CODE.CEO,
-  "2": AUTHORITY_CODE.EXECUTIVE,
-  "3": AUTHORITY_CODE.MANAGER,
-  "4": AUTHORITY_CODE.STAFF,
-};
+const AUTHORITY_CODES = Object.values(AUTHORITY_CODE);
 
 export function normalizeAuthorityCode(authorityCode: string | null | undefined): AuthorityCode | null {
   if (!authorityCode) return null;
 
-  const normalized = authorityCode.trim().toUpperCase();
+  const normalized = authorityCode.trim();
   if (!normalized) return null;
 
-  if (normalized in AUTHORITY_KEY_MAP) {
-    return AUTHORITY_KEY_MAP[normalized];
-  }
-
-  if (normalized in AUTHORITY_LEVEL) {
-    return normalized as AuthorityCode;
-  }
-
-  return null;
+  return AUTHORITY_CODES.includes(normalized as AuthorityCode)
+    ? (normalized as AuthorityCode)
+    : null;
 }
 
 export function getAuthorityLevel(authorityCode: string | null | undefined): number {
@@ -50,7 +39,7 @@ export function isExecutive(authorityCode: string | null | undefined): boolean {
 }
 
 export function isAdmin(authorityCode: string | null | undefined): boolean {
-  return isSuperAdmin(authorityCode);
+  return hasAuthority(authorityCode, AUTHORITY_CODE.MANAGER);
 }
 
 export function canAccessManagementScreen(authorityCode: string | null | undefined): boolean {

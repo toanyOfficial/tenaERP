@@ -1,14 +1,19 @@
-export type CredentialSourceType = "MANUAL" | "MASTER";
+export type CredentialSourceType = "1" | "2";
 
 export type AccountDetailItem = {
   id?: number;
   authorityCode: string | null;
+  authorityLabel?: string | null;
   typeCode: string | null;
+  typeLabel?: string | null;
   loginTypeCode: string | null;
+  loginTypeLabel?: string | null;
   idSourceType: CredentialSourceType;
+  idSourceLabel?: string | null;
   idMasterId: number | null;
   loginId: string | null;
   passwordSourceType: CredentialSourceType;
+  passwordSourceLabel?: string | null;
   passwordMasterId: number | null;
   password: string;
   employeeId: number | null;
@@ -35,5 +40,6 @@ export type PasswordMasterOption = {
   id: number;
   title: string;
   authorityCode: string | null;
+  authorityLabel?: string | null;
   useYn: "Y" | "N";
 };
