@@ -9,7 +9,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "check": "bun run lint && bun run typecheck",
-    "db:check": "drizzle-kit check"
+    "db:check": "drizzle-kit check",
+    "check:production": "node scripts/production-check.mjs",
+    "start:prod": "NODE_ENV=production next start"
   },
   "dependencies": {
     "next": "16.0.1",
@@ -21,14 +23,15 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.7",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "drizzle-kit": "^0.31.7"
+    "typescript": "^5"
   },
   "packageManager": "bun@1.2.0"
 }

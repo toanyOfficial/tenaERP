@@ -1,9 +1,9 @@
 import { successResponse, validationErrorResponse, withErrorHandler } from "@/lib/api";
-import { requireAuth } from "@/modules/auth/helpers/auth";
+import { requireManagementAuth } from "@/modules/auth/helpers/auth";
 import { buildExpensePreview } from "@/modules/profit-loss/services/expense-preview";
 
 export const POST = withErrorHandler(async (request: Request) => {
-  await requireAuth();
+  await requireManagementAuth();
 
   const formData = await request.formData();
   const file = formData.get("file");

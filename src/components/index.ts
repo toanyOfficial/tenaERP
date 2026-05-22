@@ -3,3 +3,5 @@ export * from "@/components/layout";
 export * from "@/components/grid";
 export * from "@/components/modal";
 export * from "@/components/form";
+
+export * from "@/components/import";

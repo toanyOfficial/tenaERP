@@ -1,6 +1,6 @@
 import { successResponse, validationErrorResponse, withErrorHandler } from "@/lib/api";
 import { validateBody } from "@/lib/validation";
-import { requireAuth } from "@/modules/auth/helpers/auth";
+import { requireManagementAuth } from "@/modules/auth/helpers/auth";
 import { updateSalesService } from "@/modules/profit-loss/services/sales-upsert";
 import { updateSalesSchema, validateSalesBusiness } from "@/modules/profit-loss/validators/sales-upsert";
 
@@ -17,7 +17,7 @@ export const PATCH = withErrorHandler(async (request: Request) => {
     }
   }
 
-  const user = await requireAuth();
+  const user = await requireManagementAuth();
   const updated = await updateSalesService(parsed.data, user.id);
   return successResponse(updated, "매출이 수정되었습니다.");
 });
