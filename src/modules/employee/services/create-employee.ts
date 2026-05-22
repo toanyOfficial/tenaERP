@@ -7,7 +7,12 @@ import { generateEmployeeNo } from "@/modules/employee/helpers/employee-no";
 import type { CreateEmployeeInput } from "@/modules/employee/validators/create-employee";
 
 export async function createEmployeeService(input: CreateEmployeeInput, actorId?: number) {
-  const employeeNo = await generateEmployeeNo(input.name);
+  const employeeNo = await generateEmployeeNo({
+    name: input.name,
+    englishName: input.englishName,
+    joinDate: input.joinDate,
+    residentRegistrationNoFront: input.residentRegistrationNoFront,
+  });
 
   const exists = await db
     .select({ id: dbSchema.employee.id })
@@ -34,12 +39,14 @@ export async function createEmployeeService(input: CreateEmployeeInput, actorId?
       nickname: input.nickname || null,
       departmentCode: input.departmentCode || null,
       positionCode: input.positionCode || null,
-      authorityCode: input.authorityCode || null,
+      authorityCode: input.authorityCode,
       phone: input.phone,
-      email: input.email,
+      email: input.email || null,
       bankName: input.bankName || null,
       bankAccountNo: input.bankAccountNo || null,
       address: input.address || null,
+      joinDate: input.joinDate ? new Date(input.joinDate) : null,
+      resignDate: input.resignDate ? new Date(input.resignDate) : null,
       deleteYn: "N",
       createdBy: actorId ?? null,
       updatedBy: actorId ?? null,

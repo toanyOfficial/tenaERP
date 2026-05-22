@@ -107,8 +107,8 @@ export default function Page() {
         canEditSensitive={canEditSensitive}
         onClose={() => setSelected(null)}
         onSave={async (payload) => {
-          if (!detail?.employee.id) return;
-          const res = await fetch(`/api/employees/${detail.employee.id}/update`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                    const isCreate = !detail?.employee.id;
+          const res = await fetch(isCreate ? `/api/employees/create` : `/api/employees/${detail.employee.id}/update`, { method: isCreate ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
           const json = await res.json();
           if (!json.success) throw json;
           await load();
