@@ -24,10 +24,10 @@ const toDetailForm = (d?: AccountDetailItem): DetailForm => ({
   authorityCode: d?.authorityCode ?? "",
   typeCode: d?.typeCode ?? "",
   loginTypeCode: d?.loginTypeCode ?? "",
-  idSourceType: d?.idSourceType ?? "MANUAL",
+  idSourceType: d?.idSourceType ?? "1",
   idMasterId: d?.idMasterId ?? null,
   loginId: d?.loginId ?? "",
-  passwordSourceType: d?.passwordSourceType ?? "MANUAL",
+  passwordSourceType: d?.passwordSourceType ?? "1",
   passwordMasterId: d?.passwordMasterId ?? null,
   password: "",
   employeeId: d?.employeeId ?? null,
@@ -53,9 +53,9 @@ export function AccountModal(props: { open: boolean; item: AccountItem | null; i
     setDetails((prev) => prev.map((d, i) => {
       if (i !== index) return d;
       const next = { ...d, ...patch };
-      if (patch.idSourceType === "MANUAL") next.idMasterId = null;
-      if (patch.passwordSourceType === "MANUAL") next.passwordMasterId = null;
-      if (patch.passwordSourceType === "MASTER") next.password = "";
+      if (patch.idSourceType === "1") next.idMasterId = null;
+      if (patch.passwordSourceType === "1") next.passwordMasterId = null;
+      if (patch.passwordSourceType === "2") next.password = "";
       return next;
     }));
   };
@@ -73,11 +73,11 @@ export function AccountModal(props: { open: boolean; item: AccountItem | null; i
         typeCode: d.typeCode || undefined,
         loginTypeCode: d.loginTypeCode || undefined,
         idSourceType: d.idSourceType,
-        idMasterId: d.idSourceType === "MASTER" ? d.idMasterId : null,
-        loginId: d.idSourceType === "MANUAL" ? d.loginId : "",
+        idMasterId: d.idSourceType === "2" ? d.idMasterId : null,
+        loginId: d.idSourceType === "1" ? d.loginId : "",
         passwordSourceType: d.passwordSourceType,
-        passwordMasterId: d.passwordSourceType === "MASTER" ? d.passwordMasterId : null,
-        password: d.passwordSourceType === "MANUAL" ? d.password : "",
+        passwordMasterId: d.passwordSourceType === "2" ? d.passwordMasterId : null,
+        password: d.passwordSourceType === "1" ? d.password : "",
         employeeId: d.employeeId,
       })),
     })} /></div>}>
@@ -91,19 +91,19 @@ export function AccountModal(props: { open: boolean; item: AccountItem | null; i
             <div className="grid grid-cols-2 gap-2">
               <FormField label="아이디 입력 방식" htmlFor={`id-source-${index}`}>
                 <select id={`id-source-${index}`} value={detail.idSourceType} onChange={(e) => updateDetail(index, { idSourceType: e.target.value as CredentialSourceType })} className="h-8 w-full rounded border border-slate-300 px-2 text-xs">
-                  <option value="MANUAL">직접입력</option>
-                  <option value="MASTER">마스터선택</option>
+                  <option value="1">직접입력</option>
+                  <option value="2">마스터선택</option>
                 </select>
               </FormField>
               <FormField label="비밀번호 입력 방식" htmlFor={`pw-source-${index}`}>
                 <select id={`pw-source-${index}`} value={detail.passwordSourceType} onChange={(e) => updateDetail(index, { passwordSourceType: e.target.value as CredentialSourceType })} className="h-8 w-full rounded border border-slate-300 px-2 text-xs">
-                  <option value="MANUAL">직접입력</option>
-                  <option value="MASTER">마스터선택</option>
+                  <option value="1">직접입력</option>
+                  <option value="2">마스터선택</option>
                 </select>
               </FormField>
             </div>
 
-            {detail.idSourceType === "MANUAL" ? (
+            {detail.idSourceType === "1" ? (
               <FormField label="로그인 ID" htmlFor={`login-id-${index}`}><Input id={`login-id-${index}`} value={detail.loginId} onChange={(e) => updateDetail(index, { loginId: e.target.value })} /></FormField>
             ) : (
               <FormField label="ID 마스터" htmlFor={`id-master-${index}`}>
@@ -115,7 +115,7 @@ export function AccountModal(props: { open: boolean; item: AccountItem | null; i
               </FormField>
             )}
 
-            {detail.passwordSourceType === "MANUAL" ? (
+            {detail.passwordSourceType === "1" ? (
               <FormField label="비밀번호" htmlFor={`password-${index}`}><Input id={`password-${index}`} type="password" value={detail.password} onChange={(e) => updateDetail(index, { password: e.target.value })} placeholder={props.item ? "변경 시에만 입력" : ""} /></FormField>
             ) : (
               <FormField label="PW 마스터" htmlFor={`pw-master-${index}`}>

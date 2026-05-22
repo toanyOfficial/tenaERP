@@ -3,7 +3,7 @@
 import { CredentialField } from "@/modules/account/pages/components/CredentialField";
 import type { AccountDetailItem } from "@/modules/account/pages/components/types";
 
-const sourceLabel = (v: "MANUAL" | "MASTER") => (v === "MASTER" ? "마스터" : "직접입력");
+const sourceLabel = (v: "1" | "2") => (v === "2" ? "마스터" : "직접입력");
 
 export function AccountDetailList(props: { details: AccountDetailItem[]; copyEnabled: boolean }) {
   return (

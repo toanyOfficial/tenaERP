@@ -19,8 +19,8 @@ export const GET = withErrorHandler(async (request: Request) => {
   return successResponse({
     ...result,
     visibility: {
-      canDecryptCredential: user.authorityCode === "SUPER_ADMIN",
-      canCopyCredential: user.authorityCode === "SUPER_ADMIN",
+      canDecryptCredential: user.authorityCode === "0",
+      canCopyCredential: user.authorityCode === "0",
     },
   });
 });
