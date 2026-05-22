@@ -2,6 +2,15 @@ import { z } from "zod";
 import { validatePasswordPolicy } from "@/modules/auth/validators/password";
 
 const optionalText = z.string().trim().optional().or(z.literal(""));
+const contractSchema = z.object({
+  id: z.number().int().optional(),
+  writtenDate: optionalText,
+  contractStartDate: z.string().trim().min(1, "계약 시작일자를 입력해주세요."),
+  contractEndDate: optionalText,
+  annualSalary: z.number().nullable().optional(),
+  filePath: z.string().nullable().optional(),
+  isNew: z.boolean().optional(),
+});
 
 export const createEmployeeSchema = z.object({
   name: z.string().trim().min(1, "이름은 필수입니다.").max(100),
@@ -20,6 +29,7 @@ export const createEmployeeSchema = z.object({
   address: optionalText,
   joinDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "입사일자를 확인해주세요."),
   resignDate: optionalText.refine((value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value), "퇴사일자를 확인해주세요."),
+  contracts: z.array(contractSchema).optional(),
 });
 
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;

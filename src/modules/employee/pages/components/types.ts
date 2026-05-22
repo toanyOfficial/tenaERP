@@ -39,5 +39,6 @@ export type EmployeeDetail = {
     contractEndDate: string | null;
     annualSalary: number | null;
     filePath: string | null;
+    isNew?: boolean;
   }>;
 };

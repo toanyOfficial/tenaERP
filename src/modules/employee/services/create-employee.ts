@@ -27,9 +27,10 @@ export async function createEmployeeService(input: CreateEmployeeInput, actorId?
   const passwordHash = await hashPassword(input.password);
   const residentBackEnc = encrypt(input.residentRegistrationNoBack);
 
-  const [created] = await db
-    .insert(dbSchema.employee)
-    .values({
+  const created = await db.transaction(async (tx) => {
+    const [createdEmployee] = await tx
+      .insert(dbSchema.employee)
+      .values({
       employeeNo,
       passwordHash,
       residentRegistrationNoFront: input.residentRegistrationNoFront,
@@ -50,8 +51,30 @@ export async function createEmployeeService(input: CreateEmployeeInput, actorId?
       deleteYn: "N",
       createdBy: actorId ?? null,
       updatedBy: actorId ?? null,
-    })
-    .$returningId();
+      })
+      .$returningId();
+
+    if (createdEmployee?.id && input.contracts?.length) {
+      const newContracts = input.contracts.filter((contract) => contract.contractStartDate);
+      if (newContracts.length > 0) {
+        await tx.insert(dbSchema.employeeContract).values(
+          newContracts.map((contract) => ({
+            employeeId: createdEmployee.id,
+            writtenDate: contract.writtenDate ? new Date(contract.writtenDate) : null,
+            contractStartDate: new Date(contract.contractStartDate),
+            contractEndDate: contract.contractEndDate ? new Date(contract.contractEndDate) : null,
+            annualSalary: contract.annualSalary ?? null,
+            filePath: contract.filePath ?? null,
+            deleteYn: "N",
+            createdBy: actorId ?? null,
+            updatedBy: actorId ?? null,
+          })),
+        );
+      }
+    }
+
+    return createdEmployee;
+  });
 
   return { id: created?.id, employeeNo };
 }
