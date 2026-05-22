@@ -34,7 +34,11 @@ export async function updateAccountService(accountId: number, input: UpdateAccou
         const detailUpdate: Record<string, unknown> = { updatedBy: actorId };
         if (detail.typeCode !== undefined) detailUpdate.typeCode = detail.typeCode || null;
         if (detail.loginTypeCode !== undefined) detailUpdate.loginTypeCode = detail.loginTypeCode || null;
+        if (detail.idSourceType !== undefined) detailUpdate.idSourceType = detail.idSourceType;
+        if (detail.idMasterId !== undefined) detailUpdate.idMasterId = detail.idMasterId;
         if (detail.loginId !== undefined) detailUpdate.loginId = detail.loginId || null;
+        if (detail.passwordSourceType !== undefined) detailUpdate.passwordSourceType = detail.passwordSourceType;
+        if (detail.passwordMasterId !== undefined) detailUpdate.passwordMasterId = detail.passwordMasterId;
         if (detail.authorityCode !== undefined) detailUpdate.authorityCode = detail.authorityCode || null;
         if (detail.employeeId !== undefined) detailUpdate.employeeId = detail.employeeId;
         if (detail.password !== undefined && detail.password.trim()) detailUpdate.passwordEnc = encrypt(detail.password);
@@ -45,7 +49,11 @@ export async function updateAccountService(accountId: number, input: UpdateAccou
           headerId: accountId,
           typeCode: detail.typeCode || null,
           loginTypeCode: detail.loginTypeCode || null,
+          idSourceType: detail.idSourceType ?? "MANUAL",
+          idMasterId: detail.idMasterId ?? null,
           loginId: detail.loginId || null,
+          passwordSourceType: detail.passwordSourceType ?? "MANUAL",
+          passwordMasterId: detail.passwordMasterId ?? null,
           passwordEnc: encrypt(detail.password ?? ""),
           authorityCode: detail.authorityCode || null,
           employeeId: detail.employeeId ?? null,
