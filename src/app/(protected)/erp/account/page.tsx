@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DefaultOperationActions, OperationBar, SearchBar, SearchField } from "@/components/form";
 import { AccountCard } from "@/modules/account/pages/components/AccountCard";
 import { AccountModal } from "@/modules/account/pages/components/AccountModal";
-import type { AccountItem } from "@/modules/account/pages/components/types";
+import type { AccountItem, IdMasterOption, PasswordMasterOption } from "@/modules/account/pages/components/types";
 
 export default function Page() {
   const [items, setItems] = useState<AccountItem[]>([]);
@@ -12,6 +12,8 @@ export default function Page() {
   const [copyEnabled, setCopyEnabled] = useState(false);
   const [editing, setEditing] = useState<AccountItem | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [idMasters, setIdMasters] = useState<IdMasterOption[]>([]);
+  const [passwordMasters, setPasswordMasters] = useState<PasswordMasterOption[]>([]);
 
   const load = useCallback(async () => {
     const params = new URLSearchParams(search);
@@ -21,6 +23,20 @@ export default function Page() {
     setItems(json.data.items ?? []);
     setCopyEnabled(Boolean(json.data.visibility?.canCopyCredential));
   }, [search]);
+
+  const loadMasters = useCallback(async () => {
+    try {
+      const [idRes, pwRes] = await Promise.all([fetch('/api/account-master/id'), fetch('/api/account-master/password')]);
+      const [idJson, pwJson] = await Promise.all([idRes.json(), pwRes.json()]);
+      if (idJson.success) setIdMasters((idJson.data ?? []).filter((v: IdMasterOption) => v.useYn === 'Y'));
+      if (pwJson.success) setPasswordMasters((pwJson.data ?? []).filter((v: PasswordMasterOption) => v.useYn === 'Y'));
+    } catch {
+      setIdMasters([]);
+      setPasswordMasters([]);
+    }
+  }, []);
+
+  useEffect(() => { void loadMasters(); }, [loadMasters]);
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-2">
@@ -42,9 +58,11 @@ export default function Page() {
       <AccountModal
         open={createOpen}
         item={null}
+        idMasters={idMasters}
+        passwordMasters={passwordMasters}
         onClose={() => setCreateOpen(false)}
         onSubmit={async (payload) => {
-          const res = await fetch('/api/accounts/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, details: [] }) });
+          const res = await fetch('/api/accounts/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const json = await res.json();
           if (json.success) { setCreateOpen(false); await load(); }
         }}
@@ -52,6 +70,8 @@ export default function Page() {
       <AccountModal
         open={!!editing}
         item={editing}
+        idMasters={idMasters}
+        passwordMasters={passwordMasters}
         onClose={() => setEditing(null)}
         onSubmit={async (payload) => {
           if (!editing) return;

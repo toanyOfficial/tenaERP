@@ -1,6 +1,7 @@
 export type CredentialSourceType = "MANUAL" | "MASTER";
 
 export type AccountDetailItem = {
+  id?: number;
   authorityCode: string | null;
   typeCode: string | null;
   loginTypeCode: string | null;
@@ -21,4 +22,18 @@ export type AccountItem = {
   title: string;
   tagsJson: string[] | null;
   details: AccountDetailItem[];
+};
+
+export type IdMasterOption = {
+  id: number;
+  title: string;
+  loginId: string;
+  useYn: "Y" | "N";
+};
+
+export type PasswordMasterOption = {
+  id: number;
+  title: string;
+  authorityCode: string | null;
+  useYn: "Y" | "N";
 };
