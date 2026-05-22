@@ -35,9 +35,9 @@ export async function updateAccountService(accountId: number, input: UpdateAccou
         if (detail.typeCode !== undefined) detailUpdate.typeCode = detail.typeCode || null;
         if (detail.loginTypeCode !== undefined) detailUpdate.loginTypeCode = detail.loginTypeCode || null;
 
-        const idSourceType = detail.idSourceType ?? "MANUAL";
+        const idSourceType = detail.idSourceType ?? "1";
         detailUpdate.idSourceType = idSourceType;
-        if (idSourceType === "MASTER") {
+        if (idSourceType === "2") {
           const masterId = detail.idMasterId;
           if (!masterId) throw new ValidationApiError("유효하지 않은 아이디마스터 ID입니다.", [{ field: "idMasterId", message: "ID 마스터선택 시 아이디마스터 ID가 필요합니다." }]);
           const [idMaster] = await db.select({ id: dbSchema.idMaster.id, loginId: dbSchema.idMaster.loginId, useYn: dbSchema.idMaster.useYn }).from(dbSchema.idMaster).where(eq(dbSchema.idMaster.id, masterId)).limit(1);
@@ -49,9 +49,9 @@ export async function updateAccountService(accountId: number, input: UpdateAccou
           detailUpdate.idMasterId = null;
         }
 
-        const passwordSourceType = detail.passwordSourceType ?? "MANUAL";
+        const passwordSourceType = detail.passwordSourceType ?? "1";
         detailUpdate.passwordSourceType = passwordSourceType;
-        if (passwordSourceType === "MASTER") {
+        if (passwordSourceType === "2") {
           const masterId = detail.passwordMasterId;
           if (!masterId) throw new ValidationApiError("유효하지 않은 비밀번호마스터 ID입니다.", [{ field: "passwordMasterId", message: "PW 마스터선택 시 비밀번호마스터 ID가 필요합니다." }]);
           const [passwordMaster] = await db.select({ id: dbSchema.passwordMaster.id, passwordEnc: dbSchema.passwordMaster.passwordEnc, useYn: dbSchema.passwordMaster.useYn }).from(dbSchema.passwordMaster).where(eq(dbSchema.passwordMaster.id, masterId)).limit(1);
@@ -69,12 +69,12 @@ export async function updateAccountService(accountId: number, input: UpdateAccou
 
         await db.update(dbSchema.accountDetail).set(detailUpdate).where(eq(dbSchema.accountDetail.id, detail.id));
       } else {
-        const idSourceType = detail.idSourceType ?? "MANUAL";
-        const passwordSourceType = detail.passwordSourceType ?? "MANUAL";
+        const idSourceType = detail.idSourceType ?? "1";
+        const passwordSourceType = detail.passwordSourceType ?? "1";
 
         let loginId = detail.loginId?.trim() || null;
         let idMasterId: number | null = null;
-        if (idSourceType === "MASTER") {
+        if (idSourceType === "2") {
           const masterId = detail.idMasterId;
           if (!masterId) throw new ValidationApiError("유효하지 않은 아이디마스터 ID입니다.", [{ field: "idMasterId", message: "ID 마스터선택 시 아이디마스터 ID가 필요합니다." }]);
           const [idMaster] = await db.select({ id: dbSchema.idMaster.id, loginId: dbSchema.idMaster.loginId, useYn: dbSchema.idMaster.useYn }).from(dbSchema.idMaster).where(eq(dbSchema.idMaster.id, masterId)).limit(1);
@@ -85,7 +85,7 @@ export async function updateAccountService(accountId: number, input: UpdateAccou
 
         let passwordEnc = "";
         let passwordMasterId: number | null = null;
-        if (passwordSourceType === "MASTER") {
+        if (passwordSourceType === "2") {
           const masterId = detail.passwordMasterId;
           if (!masterId) throw new ValidationApiError("유효하지 않은 비밀번호마스터 ID입니다.", [{ field: "passwordMasterId", message: "PW 마스터선택 시 비밀번호마스터 ID가 필요합니다." }]);
           const [passwordMaster] = await db.select({ id: dbSchema.passwordMaster.id, passwordEnc: dbSchema.passwordMaster.passwordEnc, useYn: dbSchema.passwordMaster.useYn }).from(dbSchema.passwordMaster).where(eq(dbSchema.passwordMaster.id, masterId)).limit(1);

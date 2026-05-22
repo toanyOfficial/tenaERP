@@ -1,18 +1,37 @@
 import { z } from "zod";
+import { ACCOUNT_TYPE_CODE, CREDENTIAL_SOURCE_TYPE, LOGIN_TYPE_CODE } from "@/modules/account/constants";
 
-const credentialSourceTypeSchema = z.enum(["MANUAL", "MASTER"]);
+const accountTypeCodeSchema = z.enum([
+  ACCOUNT_TYPE_CODE.BUSINESS,
+  ACCOUNT_TYPE_CODE.CEO,
+  ACCOUNT_TYPE_CODE.PERSONAL,
+]);
+
+const loginTypeCodeSchema = z.enum([
+  LOGIN_TYPE_CODE.ID_PASSWORD,
+  LOGIN_TYPE_CODE.CERTIFICATE,
+  LOGIN_TYPE_CODE.PHONE_AUTH,
+  LOGIN_TYPE_CODE.GMAIL_SSO,
+  LOGIN_TYPE_CODE.KAKAO_SSO,
+  LOGIN_TYPE_CODE.NAVER_SSO,
+]);
+
+const credentialSourceTypeSchema = z.enum([
+  CREDENTIAL_SOURCE_TYPE.MANUAL,
+  CREDENTIAL_SOURCE_TYPE.MASTER,
+]);
 
 const accountDetailSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
-  typeCode: z.string().trim().max(100).optional().or(z.literal("")),
-  loginTypeCode: z.string().trim().max(100).optional().or(z.literal("")),
-  idSourceType: credentialSourceTypeSchema.default("MANUAL"),
+  typeCode: accountTypeCodeSchema.optional(),
+  loginTypeCode: loginTypeCodeSchema.optional(),
+  idSourceType: credentialSourceTypeSchema.optional().default(CREDENTIAL_SOURCE_TYPE.MANUAL),
   idMasterId: z.coerce.number().int().positive().optional().nullable(),
   loginId: z.string().trim().max(255).optional().or(z.literal("")),
-  passwordSourceType: credentialSourceTypeSchema.default("MANUAL"),
+  passwordSourceType: credentialSourceTypeSchema.optional().default(CREDENTIAL_SOURCE_TYPE.MANUAL),
   passwordMasterId: z.coerce.number().int().positive().optional().nullable(),
   password: z.string().optional(),
-  authorityCode: z.string().trim().max(100).optional().or(z.literal("")),
+  authorityCode: z.enum(["0", "1", "2", "3", "4", "99"]).optional(),
   employeeId: z.coerce.number().int().positive().optional().nullable(),
 });
 
@@ -40,21 +59,25 @@ export function validateAccountDetailsBusiness(
   const errors: Array<{ field: string; message: string }> = [];
 
   details.forEach((detail, index) => {
-    const idSourceType = detail.idSourceType ?? "MANUAL";
-    const passwordSourceType = detail.passwordSourceType ?? "MANUAL";
+    if (detail.loginTypeCode !== LOGIN_TYPE_CODE.ID_PASSWORD) {
+      return;
+    }
 
-    if (idSourceType === "MANUAL" && !detail.loginId?.trim()) {
+    const idSourceType = detail.idSourceType ?? CREDENTIAL_SOURCE_TYPE.MANUAL;
+    const passwordSourceType = detail.passwordSourceType ?? CREDENTIAL_SOURCE_TYPE.MANUAL;
+
+    if (idSourceType === CREDENTIAL_SOURCE_TYPE.MANUAL && !detail.loginId?.trim()) {
       errors.push({ field: `details.${index}.loginId`, message: "ID 직접입력 시 로그인 아이디는 필수입니다." });
     }
-    if (idSourceType === "MASTER" && !detail.idMasterId) {
+    if (idSourceType === CREDENTIAL_SOURCE_TYPE.MASTER && !detail.idMasterId) {
       errors.push({ field: `details.${index}.idMasterId`, message: "ID 마스터선택 시 아이디마스터 ID는 필수입니다." });
     }
 
-    if (passwordSourceType === "MASTER" && !detail.passwordMasterId) {
+    if (passwordSourceType === CREDENTIAL_SOURCE_TYPE.MASTER && !detail.passwordMasterId) {
       errors.push({ field: `details.${index}.passwordMasterId`, message: "PW 마스터선택 시 비밀번호마스터 ID는 필수입니다." });
     }
 
-    if (passwordSourceType === "MANUAL") {
+    if (passwordSourceType === CREDENTIAL_SOURCE_TYPE.MANUAL) {
       const hasPasswordInput = Boolean(detail.password?.trim());
       const canKeepExisting = Boolean(options?.isUpdate && detail.id);
       if (!hasPasswordInput && !canKeepExisting) {
