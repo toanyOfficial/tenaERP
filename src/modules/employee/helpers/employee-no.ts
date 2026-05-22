@@ -1,23 +1,30 @@
 import { and, eq, like, sql } from "drizzle-orm";
 import { db, dbSchema } from "@/db";
 
-function toInitial(name: string) {
-  const trimmed = name.trim();
-  if (!trimmed) return "X";
-  return trimmed[0].toUpperCase();
+function toInitials(englishName: string, fallbackName: string) {
+  const normalized = englishName.trim().replace(/\s+/g, " ");
+  if (!normalized) {
+    const fallback = fallbackName.trim();
+    return fallback ? fallback[0].toUpperCase() : "X";
+  }
+
+  return normalized
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
-function formatDatePart(date: Date) {
-  const yyyy = String(date.getFullYear());
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return { ymd: `${yyyy}${mm}${dd}`, mmdd: `${mm}${dd}` };
-}
-
-export async function generateEmployeeNo(name: string, now = new Date()) {
-  const { ymd, mmdd } = formatDatePart(now);
-  const initial = toInitial(name);
-  const base = `${ymd}${initial}${mmdd}`;
+export async function generateEmployeeNo(input: {
+  name: string;
+  englishName: string;
+  joinDate: string;
+  residentRegistrationNoFront: string;
+}) {
+  const ymd = input.joinDate.replaceAll("-", "");
+  const mmdd = input.residentRegistrationNoFront.slice(2, 6);
+  const initials = toInitials(input.englishName, input.name);
+  const base = `${ymd}${initials}${mmdd}`;
 
   const [row] = await db
     .select({ count: sql<number>`count(*)` })

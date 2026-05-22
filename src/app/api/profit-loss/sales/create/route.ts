@@ -1,6 +1,6 @@
 import { successResponse, validationErrorResponse, withErrorHandler } from "@/lib/api";
 import { validateBody } from "@/lib/validation";
-import { requireAuth } from "@/modules/auth/helpers/auth";
+import { requireManagementAuth } from "@/modules/auth/helpers/auth";
 import { createSalesService } from "@/modules/profit-loss/services/sales-upsert";
 import { createSalesSchema, validateSalesBusiness } from "@/modules/profit-loss/validators/sales-upsert";
 
@@ -15,7 +15,7 @@ export const POST = withErrorHandler(async (request: Request) => {
     return validationErrorResponse(business.message, business.errors);
   }
 
-  const user = await requireAuth();
+  const user = await requireManagementAuth();
   const created = await createSalesService(parsed.data, user.id);
   return successResponse(created, "매출이 등록되었습니다.", 201);
 });
