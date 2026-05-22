@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { SearchActions } from "@/components/form/search-bar/SearchActions";
 
@@ -13,11 +13,20 @@ type SearchBarProps = {
 };
 
 export function SearchBar({ children, onSearch, onReset, autoSearchOnMount = true, disableSearch }: SearchBarProps) {
+  const didAutoSearchRef = useRef(false);
+  const onSearchRef = useRef(onSearch);
+
   useEffect(() => {
-    if (autoSearchOnMount) {
-      onSearch();
-    }
-  }, [autoSearchOnMount, onSearch]);
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
+  useEffect(() => {
+    if (!autoSearchOnMount) return;
+    if (didAutoSearchRef.current) return;
+
+    didAutoSearchRef.current = true;
+    onSearchRef.current();
+  }, [autoSearchOnMount]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

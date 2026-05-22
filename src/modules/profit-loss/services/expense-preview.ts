@@ -1,5 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db, dbSchema } from "@/db";
+import { bindRawData, createPreviewResult, validateImportRows } from "@/lib/import";
 import { parseExpensePreviewCsv } from "@/modules/profit-loss/parsers/expense-preview";
 import { expenseRowSchema, validateExpenseRowBusiness } from "@/modules/profit-loss/validators/expense-preview";
 
@@ -13,40 +14,41 @@ export async function buildExpensePreview(fileText: string) {
     .orderBy(dbSchema.batchLog.batchSeq)
     .limit(1);
 
-  const items = rows.map((row) => {
-    const parsedResult = expenseRowSchema.safeParse(row.parsed);
-    if (!parsedResult.success) {
-      return {
-        rowNo: row.rowNo,
-        parsedData: row.parsed,
-        validation: { valid: false, errors: parsedResult.error.issues.map((i) => i.message) },
-        importable: false,
-        errorMessage: parsedResult.error.issues[0]?.message ?? "형식 오류",
-      };
-    }
+  const validation = validateImportRows(
+    rows.map((row) => ({ rowNo: row.rowNo, parsedData: bindRawData(row.parsed, row.raw) })),
+    (input) => {
+      const parsed = expenseRowSchema.safeParse(input.parsedData);
+      if (!parsed.success) {
+        return { success: false as const, errors: parsed.error.issues.map((issue) => issue.message) };
+      }
+      return { success: true as const, data: bindRawData(parsed.data, input.rawData) };
+    },
+    (row) => validateExpenseRowBusiness(row.parsedData),
+  );
 
-    const business = validateExpenseRowBusiness(parsedResult.data);
-    return {
-      rowNo: row.rowNo,
-      parsedData: parsedResult.data,
-      validation: { valid: business.valid, errors: business.errors },
-      importable: business.valid,
-      errorMessage: business.valid ? null : business.errors[0],
-    };
-  });
+  const preview = createPreviewResult(validation);
+  const items = preview.items.map((row) => ({
+    rowNo: row.rowNo,
+    parsedData: row.parsedData.parsedData,
+    rawData: row.parsedData.rawData,
+    valid: row.valid,
+    errors: row.errors,
+    validation: { valid: row.valid, errors: row.errors },
+    importable: row.valid,
+    errorMessage: row.valid ? null : row.errors[0] ?? "검증 오류",
+  }));
 
-  const invalidRows = items.filter((row) => !row.importable);
   return {
-    previewCount: items.length,
-    validCount: items.length - invalidRows.length,
-    invalidCount: invalidRows.length,
-    canImport: invalidRows.length === 0 && items.length > 0,
+    previewCount: preview.summary.totalRows,
+    validCount: preview.summary.validRows,
+    invalidCount: preview.summary.invalidRows,
+    canImport: preview.canImport,
     batchLog: {
       duplicatedGroup: !!lastBatch,
       latestBatchSeq: lastBatch?.batchSeq ?? null,
       latestExecutedDate: lastBatch?.executedDate ?? null,
     },
     items,
-    invalidRows,
+    invalidRows: items.filter((row) => !row.importable),
   };
 }

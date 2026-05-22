@@ -10,6 +10,7 @@ export default function Page() {
   const [rows, setRows] = useState<EmployeeListRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [search, setSearch] = useState({ name: "", employeeNo: "", phone: "", birthDate: "", employmentStatus: "ALL" });
   const [selected, setSelected] = useState<EmployeeListRow | null>(null);
   const [detail, setDetail] = useState<EmployeeDetail | null>(null);
@@ -17,32 +18,57 @@ export default function Page() {
   const [canEditSensitive, setCanEditSensitive] = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true); setError(null);
-    const params = new URLSearchParams(search as Record<string, string>);
-    const res = await fetch(`/api/employees?${params.toString()}`);
-    const json = await res.json();
-    if (!json.success) { setError(json.message ?? "조회 실패"); setLoading(false); return; }
-    setRows(json.data.items);
-    setLoading(false);
+    setLoading(true);
+    setError(null);
+    setSearchError(null);
+
+    try {
+      const params = new URLSearchParams();
+      Object.entries(search).forEach(([key, value]) => {
+        if (!value) return;
+        if (key === "employmentStatus" && value === "ALL") return;
+        params.set(key, value);
+      });
+
+      const query = params.toString();
+      const res = await fetch(`/api/employees${query ? `?${query}` : ""}`);
+      const json = await res.json();
+
+      if (!json.success) {
+        if (json.errorCode === "VALIDATION_ERROR") {
+          setSearchError(json.message ?? "검색 조건을 확인해주세요.");
+          setError(null);
+        } else {
+          setError(json.message ?? "조회 실패");
+        }
+        return;
+      }
+
+      setRows(json.data.items);
+    } catch {
+      setError("조회 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
   }, [search]);
 
   useEffect(() => {
     void (async () => {
       const res = await fetch("/api/auth/me");
       const json = await res.json();
-      const authorityCode = json?.data?.authorityCode as string | undefined;
-      const executive = authorityCode === "SUPER_ADMIN" || authorityCode === "CEO" || authorityCode === "EXECUTIVE";
-      setCanViewContract(executive);
-      setCanEditSensitive(executive);
+      const canViewContract = Boolean(json?.data?.visibility?.canViewContract);
+      setCanViewContract(canViewContract);
+      setCanEditSensitive(canViewContract);
     })();
   }, []);
+
+  const handleSearch = useCallback(() => {
+    void load();
+  }, [load]);
 
   async function openDetail(row: EmployeeListRow) {
     setSelected(row);
     const res = await fetch(`/api/employees/${row.id}`);
-    // detail API expects numeric id; fallback query by list row click through separate map unavailable in list response.
-    // use list index-based route is not possible, so derive via separate search by name/employeeNo from list endpoint not provided.
-    // keep modal for new mode when no detail fetched.
     if (!res.ok) {
       setDetail(null);
       return;
@@ -53,7 +79,7 @@ export default function Page() {
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-2">
-      <SearchBar onSearch={() => void load()} onReset={() => setSearch({ name: "", employeeNo: "", phone: "", birthDate: "", employmentStatus: "ALL" })}>
+      <SearchBar onSearch={handleSearch} onReset={() => setSearch({ name: "", employeeNo: "", phone: "", birthDate: "", employmentStatus: "ALL" })}>
         <SearchField label="이름" htmlFor="s-name" value={search.name} onChange={(e) => setSearch((p) => ({ ...p, name: e.target.value }))} />
         <SearchField label="사번" htmlFor="s-no" value={search.employeeNo} onChange={(e) => setSearch((p) => ({ ...p, employeeNo: e.target.value }))} />
         <SearchField label="연락처" htmlFor="s-phone" value={search.phone} onChange={(e) => setSearch((p) => ({ ...p, phone: e.target.value }))} />
@@ -65,7 +91,9 @@ export default function Page() {
         </SearchField>
       </SearchBar>
 
-      <OperationBar leftActions={<DefaultOperationActions onCreate={() => { setSelected({ id: 0, employeeNo: "", name: "신규", nickname: null, birthDate: null, phone: null, email: null, bankName: null, bankAccountNo: null, address: null, employmentStatus: "EMPLOYED", updatedAt: new Date().toISOString() }); setDetail(null); }} />} onReset={() => void load()} />
+      {searchError ? <p className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600">{searchError}</p> : null}
+
+      <OperationBar leftActions={<DefaultOperationActions onCreate={() => { setSelected({ id: 0, employeeNo: "", name: "신규", nickname: null, birthDate: null, phone: null, email: null, bankName: null, bankAccountNo: null, address: null, employmentStatus: "EMPLOYED", updatedAt: new Date().toISOString() }); setDetail(null); }} />} onReset={handleSearch} />
 
       <div className="min-h-0 flex-1">
         <EmployeeGrid rows={rows} loading={loading} errorMessage={error} onRowClick={(row) => void openDetail(row)} />
