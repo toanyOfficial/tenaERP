@@ -1,10 +1,16 @@
 import { z } from "zod";
 
+const credentialSourceTypeSchema = z.enum(["MANUAL", "MASTER"]);
+
 const accountDetailSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
   typeCode: z.string().trim().max(100).optional().or(z.literal("")),
   loginTypeCode: z.string().trim().max(100).optional().or(z.literal("")),
+  idSourceType: credentialSourceTypeSchema.default("MANUAL"),
+  idMasterId: z.coerce.number().int().positive().optional().nullable(),
   loginId: z.string().trim().max(255).optional().or(z.literal("")),
+  passwordSourceType: credentialSourceTypeSchema.default("MANUAL"),
+  passwordMasterId: z.coerce.number().int().positive().optional().nullable(),
   password: z.string().optional(),
   authorityCode: z.string().trim().max(100).optional().or(z.literal("")),
   employeeId: z.coerce.number().int().positive().optional().nullable(),
@@ -27,12 +33,34 @@ export const updateAccountSchema = z.object({
 export type CreateAccountInput = z.infer<typeof createAccountSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
 
-export function validateAccountDetailsBusiness(details: Array<z.infer<typeof accountDetailSchema>>) {
+export function validateAccountDetailsBusiness(
+  details: Array<z.infer<typeof accountDetailSchema>>,
+  options?: { isUpdate?: boolean },
+) {
   const errors: Array<{ field: string; message: string }> = [];
 
   details.forEach((detail, index) => {
-    if (!detail.loginId?.trim()) errors.push({ field: `details.${index}.loginId`, message: "로그인 아이디는 필수입니다." });
-    if (!detail.password?.trim()) errors.push({ field: `details.${index}.password`, message: "비밀번호는 필수입니다." });
+    const idSourceType = detail.idSourceType ?? "MANUAL";
+    const passwordSourceType = detail.passwordSourceType ?? "MANUAL";
+
+    if (idSourceType === "MANUAL" && !detail.loginId?.trim()) {
+      errors.push({ field: `details.${index}.loginId`, message: "ID 직접입력 시 로그인 아이디는 필수입니다." });
+    }
+    if (idSourceType === "MASTER" && !detail.idMasterId) {
+      errors.push({ field: `details.${index}.idMasterId`, message: "ID 마스터선택 시 아이디마스터 ID는 필수입니다." });
+    }
+
+    if (passwordSourceType === "MASTER" && !detail.passwordMasterId) {
+      errors.push({ field: `details.${index}.passwordMasterId`, message: "PW 마스터선택 시 비밀번호마스터 ID는 필수입니다." });
+    }
+
+    if (passwordSourceType === "MANUAL") {
+      const hasPasswordInput = Boolean(detail.password?.trim());
+      const canKeepExisting = Boolean(options?.isUpdate && detail.id);
+      if (!hasPasswordInput && !canKeepExisting) {
+        errors.push({ field: `details.${index}.password`, message: "PW 직접입력 시 비밀번호는 필수입니다." });
+      }
+    }
   });
 
   if (errors.length > 0) {
